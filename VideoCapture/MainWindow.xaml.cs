@@ -15,7 +15,36 @@ namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
     {
-        #region Bindings
+        string version = "2021/12/27";
+
+        #region VARIABLES & PARAMETERS
+        // FPS
+        long T0;
+        System.Diagnostics.Stopwatch chrono = new System.Diagnostics.Stopwatch();
+
+        // Image capturée
+        Mat frame;
+        double actualWidth;
+        bool flip_h;
+        bool flip_v;
+        RotateFlags? rotation;
+
+        // Filtres
+        Dictionary<string, MenuItem> filtres;
+        string dossierFiltres = AppDomain.CurrentDomain.BaseDirectory + "filters";
+
+        // CAMERA
+        Thread thread;
+        int indexDevice;
+        VideoInInfo.Format format;
+        private string deviceName;
+        private string formatName;
+        Dictionary<string, VideoInInfo.Format> formats;
+        OpenCvSharp.VideoCapture capture;
+        bool isRunning = false;
+        #endregion
+
+        #region VARIABLES BINDINGS
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected void OnPropertyChanged(string name = null)
@@ -57,7 +86,6 @@ namespace VideoCapture
         }
         string Infos;
 
-
         public bool _ShowCPUMem
         {
             get { return ShowCPUMem; }
@@ -68,6 +96,24 @@ namespace VideoCapture
             }
         }
         bool ShowCPUMem = true;
+
+        public bool _HideWindowBar
+        {
+            get { return HideWindowBar; }
+            set
+            {
+                HideWindowBar = value;
+                ctxm_hideothers.IsChecked = _HideWindowBar;
+                OnPropertyChanged("_HideWindowBar");
+                WindowBarManagement();
+            }
+        }
+        bool HideWindowBar;
+
+        public string _version
+        {
+            get { return version; }
+        }
 
         public System.Drawing.Bitmap _imageSource
         {
@@ -113,6 +159,9 @@ namespace VideoCapture
         System.Diagnostics.PerformanceCounter cpuCounterIHM;
         //PerformanceCounter ramCounter;
 
+        TimeSpan _prevCPUUseTime;
+        int cpuUseTime_period = 1000;
+
         void InfoProcess_INIT()
         {
             cpuCounterAll = new System.Diagnostics.PerformanceCounter("Processor", "% Processor Time", "_Total");
@@ -136,8 +185,6 @@ namespace VideoCapture
             OnPropertyChanged("CurrentCpuUsage");
             OnPropertyChanged("AvailableRAM");
         }
-        TimeSpan _prevCPUUseTime;
-        int cpuUseTime_period = 1000;
         public string CurrentCpuUsage
         {
             get
@@ -158,27 +205,7 @@ namespace VideoCapture
         }
         #endregion
 
-        long T0;
-        System.Diagnostics.Stopwatch chrono = new System.Diagnostics.Stopwatch();
-
-        Mat frame;
-        double actualWidth;
-
-        Dictionary<string, MenuItem> filtres;
-        System.Windows.Controls.Image image_preview_filter;
-        string dossierFiltres = AppDomain.CurrentDomain.BaseDirectory + "filters";
-        #region CAMERA
-        Thread thread;
-        int indexDevice;
-        VideoInInfo.Format format;
-        private string deviceName;
-        private string formatName;
-        Dictionary<string, VideoInInfo.Format> formats;
-        OpenCvSharp.VideoCapture capture;
-        bool isRunning = false;
-        #endregion
-
-        #region Gestion Window
+        #region WINDOW MANAGEMENT
         public MainWindow()
         {
             InitializeComponent();
@@ -209,6 +236,48 @@ namespace VideoCapture
                     this.DragMove();
             }
         }
+
+        void Window_MouseEnter(object sender, MouseEventArgs e)
+        {
+            grd_visu.Visibility = Visibility.Visible;
+        }
+
+        void Window_MouseLeave(object sender, MouseEventArgs e)
+        {
+            grd_visu.Visibility = Visibility.Collapsed;
+        }
+        #endregion
+
+        #region WINDOW MANAGEMENT - Contextual Menu
+        private void ctxm_alwaysontop_Click(object sender, RoutedEventArgs e)
+        {
+            Topmost = ctxm_alwaysontop.IsChecked;
+        }
+
+        private void ctxm_hideothers_Click(object sender, RoutedEventArgs e)
+        {
+            _HideWindowBar = !_HideWindowBar;
+            ctxm_hideothers.IsChecked = _HideWindowBar;
+        }
+
+        void WindowBarManagement()
+        {
+            if (_HideWindowBar)
+            {
+                grd_visu.Visibility = Visibility.Collapsed;
+                WindowStyle = WindowStyle.None;
+            }
+            else
+            {
+                grd_visu.Visibility = Visibility.Visible;
+                WindowStyle = WindowStyle.SingleBorderWindow;
+            }
+        }
+
+        private void ctxm_quit_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
         #endregion
 
         void INITS()
@@ -218,9 +287,61 @@ namespace VideoCapture
             actualWidth = 320;
             UpdateFilers();
             ManageFilter("");
+            _HideWindowBar = true;
         }
 
-        #region CAMERA MANAGEMENT
+        #region DEVICES MANAGEMENT
+        private void AllDevices_Click(object sender, MouseButtonEventArgs e)
+        {
+            ListDevices();
+        }
+
+        private void ListDevices()
+        {
+            var devices = VideoInInfo.EnumerateVideoDevices_JJ();
+            if (cbx_device != null)
+                cbx_device.ItemsSource = devices.Select(d => d.Name).ToList();
+        }
+
+        void Play()
+        {
+            chrono.Start();
+            isRunning = !isRunning;
+
+            if (isRunning)
+            {
+                indexDevice = cbx_device.SelectedIndex;
+                CaptureCamera(indexDevice);
+            }
+        }
+
+        private void Combobox_CaptureDevice_Change(object sender, SelectionChangedEventArgs e)
+        {
+            indexDevice = cbx_device.SelectedIndex;
+            formats = VideoInInfo.EnumerateSupportedFormats_JJ(indexDevice);
+            cbx_deviceFormat.ItemsSource = formats.OrderBy(f => f.Value.format).ThenByDescending(f => f.Value.w).Select(f => f.Key);
+
+            deviceName = cbx_device.Items[cbx_device.SelectedIndex].ToString();
+            OnPropertyChanged("_title");
+
+            //set default format
+            cbx_deviceFormat.SelectedIndex = 0;
+        }
+
+        private void Combobox_CaptureDeviceFormat_Change(object sender, SelectionChangedEventArgs e)
+        {
+            format = formats[cbx_deviceFormat.SelectedValue as string];
+
+            formatName = cbx_deviceFormat.Items[cbx_deviceFormat.SelectedIndex].ToString();
+            OnPropertyChanged("_title");
+
+            if (!isRunning)
+                Play();
+        }
+
+        #endregion
+
+        #region CAPTURE MANAGEMENT
         void CaptureCamera(int index)
         {
             if (thread != null && thread.IsAlive)
@@ -286,6 +407,8 @@ namespace VideoCapture
         }
         #endregion
 
+        #region IMAGE MANAGEMENT
+
         void Show(Mat frame)
         {
             if (!frame.Empty())
@@ -309,81 +432,60 @@ namespace VideoCapture
             _fps = "[" + f.ToString("N1") + " fps]";
         }
 
-        #region Capture Device
-        private void AllDevices_Click(object sender, MouseButtonEventArgs e)
+        void ctxm_rotate90_Click(object sender, RoutedEventArgs e)
         {
-            ListDevices();
-        }
-
-        private void ListDevices()
-        {
-            var devices = VideoInInfo.EnumerateVideoDevices_JJ();
-            if (cbx_device != null)
-                cbx_device.ItemsSource = devices.Select(d => d.Name).ToList();
-        }
-
-        void Play()
-        {
-            chrono.Start();
-            isRunning = !isRunning;
-
-            if (isRunning)
-            {
-                indexDevice = cbx_device.SelectedIndex;
-                CaptureCamera(indexDevice);
-            }
-        }
-
-        private void Combobox_CaptureDevice_Change(object sender, SelectionChangedEventArgs e)
-        {
-            indexDevice = cbx_device.SelectedIndex;
-            formats = VideoInInfo.EnumerateSupportedFormats_JJ(indexDevice);
-            cbx_deviceFormat.ItemsSource = formats.OrderBy(f => f.Value.format).ThenByDescending(f => f.Value.w).Select(f => f.Key);
-
-            deviceName = cbx_device.Items[cbx_device.SelectedIndex].ToString();
-            OnPropertyChanged("_title");
-
-            //set default format
-            cbx_deviceFormat.SelectedIndex = 0;
-        }
-
-        private void Combobox_CaptureDeviceFormat_Change(object sender, SelectionChangedEventArgs e)
-        {
-            format = formats[cbx_deviceFormat.SelectedValue as string];
-
-            formatName = cbx_deviceFormat.Items[cbx_deviceFormat.SelectedIndex].ToString();
-            OnPropertyChanged("_title");
-
-            if (!isRunning)
-                Play();
-        }
-
-        private void ctxm_alwaysontop_Click(object sender, RoutedEventArgs e)
-        {
-            Topmost = ctxm_alwaysontop.IsChecked;
-        }
-
-        private void ctxm_hideothers_Click(object sender, RoutedEventArgs e)
-        {
-            if (ctxm_hideothers.IsChecked)
-            {
-                grd_visu.Height = new GridLength(0);
-                WindowStyle = WindowStyle.None;
-            }
+            if (rotation == RotateFlags.Rotate90Clockwise)
+                rotation = null;
             else
+                rotation = RotateFlags.Rotate90Clockwise;
+            MenuItemRotationCheck();
+        }
+
+        void ctxm_rotate270_Click(object sender, RoutedEventArgs e)
+        {
+            if (rotation == RotateFlags.Rotate90Counterclockwise)
+                rotation = null;
+            else
+                rotation = RotateFlags.Rotate90Counterclockwise;
+            MenuItemRotationCheck();
+        }
+
+        void ctxm_rotate180_Click(object sender, RoutedEventArgs e)
+        {
+            if (rotation == RotateFlags.Rotate180)
+                rotation = null;
+            else
+                rotation = RotateFlags.Rotate180;
+            MenuItemRotationCheck();
+        }
+
+        void MenuItemRotationCheck()
+        {
+            ctxm_rotate90.IsChecked = false;
+            ctxm_rotate180.IsChecked = false;
+            ctxm_rotate270.IsChecked = false;
+            switch (rotation)
             {
-                grd_visu.Height = new GridLength(1, GridUnitType.Auto);
-                WindowStyle = WindowStyle.SingleBorderWindow;
+                case RotateFlags.Rotate90Clockwise: ctxm_rotate90.IsChecked = true; break;
+                case RotateFlags.Rotate90Counterclockwise: ctxm_rotate270.IsChecked = true; break;
+                case RotateFlags.Rotate180: ctxm_rotate180.IsChecked = true; break;
             }
         }
 
-        private void ctxm_quit_Click(object sender, RoutedEventArgs e)
+        void ctxm_flip_h_Click(object sender, RoutedEventArgs e)
         {
-            Close();
+            flip_h = !flip_h;
+            ((MenuItem)sender).IsChecked = flip_h;
+        }
+
+        void ctxm_flip_v_Click(object sender, RoutedEventArgs e)
+        {
+            flip_v = !flip_v;
+            ((MenuItem)sender).IsChecked = flip_v;
         }
         #endregion
 
-        #region Filters
+        #region FILTERS
 
         void UpdateFilers()
         {
@@ -466,7 +568,7 @@ namespace VideoCapture
             return myImage3;
         }
 
-        private void Mi_addfilter_Click(object sender, RoutedEventArgs e)
+        void Mi_addfilter_Click(object sender, RoutedEventArgs e)
         {
             //selectionne fichier image
             Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
@@ -481,7 +583,7 @@ namespace VideoCapture
             }
         }
 
-        private void Mi_none_Click(object sender, RoutedEventArgs e)
+        void Mi_none_Click(object sender, RoutedEventArgs e)
         {
             ManageFilter("");
         }
@@ -514,53 +616,5 @@ namespace VideoCapture
                 item.Value.IsChecked = (item.Key == filtername);
         }
         #endregion
-
-        bool flip_h;
-        bool flip_v;
-        RotateFlags? rotation;
-
-        private void ctxm_rotate90_Click(object sender, RoutedEventArgs e)
-        {
-            if (rotation == null)
-                rotation = RotateFlags.Rotate90Clockwise;
-            else
-                rotation = null;
-            MenuItemRotationCheck();
-        }
-
-        private void ctxm_rotate270_Click(object sender, RoutedEventArgs e)
-        {
-            if (rotation == null)
-                rotation = RotateFlags.Rotate90Counterclockwise;
-            else
-                rotation = null;
-            MenuItemRotationCheck();
-        }
-
-        private void ctxm_rotate180_Click(object sender, RoutedEventArgs e)
-        {
-            if (rotation == null)
-                rotation = RotateFlags.Rotate180;
-            else
-                rotation = null;
-            MenuItemRotationCheck();
-        }
-
-        private void MenuItemRotationCheck()
-        {
-
-        }
-
-        private void ctxm_flip_h_Click(object sender, RoutedEventArgs e)
-        {
-            flip_h = !flip_h;
-            ((MenuItem)sender).IsChecked = flip_h;
-        }
-
-        private void ctxm_flip_v_Click(object sender, RoutedEventArgs e)
-        {
-            flip_v = !flip_v;
-            ((MenuItem)sender).IsChecked = flip_v;
-        }
     }
 }
