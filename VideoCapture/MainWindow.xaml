@@ -1,0 +1,161 @@
+﻿<Window x:Class="VideoCapture.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:VideoCapture"
+        mc:Ignorable="d"
+        Title="{Binding _title}" Height="200" Width="800" Loaded="Window_Loaded" Closing="Window_Closing" SizeChanged="Window_SizeChanged">
+    <Window.Resources>
+        <local:BitmapToBitmapImageConverter x:Key="bitmapConverter"/>
+        <local:VisibilityConverter x:Key = "VisibilityConverter" />
+
+        <Style x:Key="HorizontalStackPanel" TargetType="{x:Type StackPanel}">
+            <Setter Property="Orientation" Value="Horizontal" />
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="FrameworkElement.VerticalAlignment" Value="Center" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" Name="grd_visu"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Height="40" Orientation="Horizontal">
+            <StackPanel.Resources>
+                <Style TargetType="{x:Type Image}">
+                    <Setter Property="Margin" Value="2"/>
+                </Style>
+                <Style TargetType="{x:Type ComboBox}">
+                    <Setter Property="Margin" Value="2"/>
+                </Style>
+            </StackPanel.Resources>
+            <ComboBox Name="cbx_device" SelectionChanged="Combobox_CaptureDevice_Change" VerticalContentAlignment="Center" MinWidth="200" ToolTip="Device"/>
+            <Image Source="/Resources/refresh.png" MouseDown="AllDevices_Click" ToolTip="Get all devices"/>
+            <ComboBox Name="cbx_deviceFormat" SelectionChanged="Combobox_CaptureDeviceFormat_Change" VerticalContentAlignment="Center" MinWidth="200" ToolTip="Format"/>            
+        </StackPanel>
+        <StackPanel Grid.Row="0" Height="40" Orientation="Horizontal" HorizontalAlignment="Right">
+            <CheckBox Content="Display CPU/Mem use" IsChecked="{Binding _ShowCPUMem}" VerticalContentAlignment="Center" Margin="0,0,5,0"/>
+        </StackPanel>
+        <Image Grid.Row="1" x:Name="image" Stretch="Uniform"
+               Source="{Binding _imageSource, Mode=OneWay, NotifyOnSourceUpdated=True, Converter={StaticResource bitmapConverter}}"
+               MouseDown="img_mousedown"
+               />
+
+        <Image Grid.Row="1" x:Name="imagecalque" Stretch="Uniform"/>
+
+        <Image Grid.Row="1" MouseDown="img_mousedown" Source="/Resources/_transparent 32x32.png" Stretch="UniformToFill">
+            <Image.ContextMenu>
+                <ContextMenu>
+                    <MenuItem IsCheckable="True" IsChecked="False" Name="ctxm_alwaysontop" Click="ctxm_alwaysontop_Click">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="20" Height="20" Source="Resources/pin.png" />
+                                <ContentPresenter Margin="10,0,0,0" Content="Always On top" />
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
+                    <MenuItem IsCheckable="True" IsChecked="False" Name="ctxm_hideothers" Click="ctxm_hideothers_Click">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="20" Height="20" Source="Resources/camera.png" />
+                                <ContentPresenter Margin="10,0,0,0" Content="Only picture" />
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
+
+                    <Separator />
+                    <!-- Flip & Rotation -->
+                    <MenuItem>
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="20" Height="20" Source="Resources/kmultiple.png" />
+                                <ContentPresenter Margin="10,0,0,0" Content="Flip &amp; Rotation" />
+                            </StackPanel>
+                        </MenuItem.Header>
+
+                        <MenuItem Click="ctxm_rotate90_Click">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Width="30" Height="30" Source="/Resources/flip_v.png" />
+                                    <ContentPresenter Margin="10,0,0,0" Content="Rotate 90°" />
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem Click="ctxm_rotate270_Click">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Width="30" Height="30" Source="/Resources/flip_v.png" />
+                                    <ContentPresenter Margin="10,0,0,0" Content="Rotat -90°" />
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem Click="ctxm_rotate180_Click">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Width="30" Height="30" Source="/Resources/flip_v.png" />
+                                    <ContentPresenter Margin="10,0,0,0" Content="Rotate 180°" />
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        
+                        <MenuItem Click="ctxm_flip_h_Click">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Width="30" Height="30" Source="/Resources/flip_h.png" />
+                                    <ContentPresenter Margin="10,0,0,0" Content="Horizontal mirror" />
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem Click="ctxm_flip_v_Click">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Width="30" Height="30" Source="/Resources/flip_v.png" />
+                                    <ContentPresenter Margin="10,0,0,0" Content="Vertical mirror" />
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                    </MenuItem>
+                    
+                    <Separator />
+                    
+                    <MenuItem x:Name="ctxm_calque">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="20" Height="20" Source="Resources/kmultiple.png" />
+                                <ContentPresenter Margin="10,0,0,0" Content="Filters" />
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
+
+                    <Separator />
+
+                    <MenuItem Click="ctxm_quit_Click">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="20" Height="20" Source="Resources/Cross.png" />
+                                <ContentPresenter Margin="10,0,0,0" Content="Quit" />
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
+                </ContextMenu>
+            </Image.ContextMenu>
+        </Image>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="#55ffffff">
+            <Label Content="{Binding _Infos}" FontSize="10"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="{Binding _ShowCPUMem, Converter={StaticResource VisibilityConverter}}"
+                    Background="#55ffffff"
+                    >
+            <Label Content="{Binding CurrentCpuUsage}" FontSize="10"/>
+            <Label Content="{Binding AvailableRAM}" FontSize="10"/>
+        </StackPanel>
+    </Grid>
+</Window>
