@@ -154,57 +154,6 @@ namespace VideoCapture
         System.Drawing.Bitmap imageCalque;
         #endregion
 
-        #region CPU/Mem
-        System.Diagnostics.PerformanceCounter cpuCounterAll;
-        System.Diagnostics.PerformanceCounter cpuCounterIHM;
-        //PerformanceCounter ramCounter;
-
-        TimeSpan _prevCPUUseTime;
-        int cpuUseTime_period = 1000;
-
-        void InfoProcess_INIT()
-        {
-            cpuCounterAll = new System.Diagnostics.PerformanceCounter("Processor", "% Processor Time", "_Total");
-            cpuCounterIHM = new System.Diagnostics.PerformanceCounter("Process", "% Processor Time", System.Diagnostics.Process.GetCurrentProcess().ProcessName);
-            //ramCounter = new PerformanceCounter("Memory", "Available MBytes");
-
-            System.Windows.Threading.DispatcherTimer cpu_memory_usage = new System.Windows.Threading.DispatcherTimer();
-            cpu_memory_usage.Interval = TimeSpan.FromMilliseconds(cpuUseTime_period); //laisser 1 sec pour calcul CPU
-            cpu_memory_usage.Tick += Cpu_memory_usage_Tick;
-            cpu_memory_usage.Start();
-        }
-
-        private void Cpu_memory_usage_Tick(object sender, EventArgs e)
-        {
-            // Getting first initial values
-            cpuCounterIHM.NextValue();
-            cpuCounterAll.NextValue();
-
-            // Creating delay to get correct values of CPU usage during next query
-            Thread.Sleep(50);
-            OnPropertyChanged("CurrentCpuUsage");
-            OnPropertyChanged("AvailableRAM");
-        }
-        public string CurrentCpuUsage
-        {
-            get
-            {
-                TimeSpan endCpuUsage = System.Diagnostics.Process.GetCurrentProcess().TotalProcessorTime;
-                double cpuUsedMs = (endCpuUsage - _prevCPUUseTime).TotalMilliseconds;
-                _prevCPUUseTime = endCpuUsage;
-                double cpuUsageTotal = cpuUsedMs / (Environment.ProcessorCount * cpuUseTime_period);
-                return "CPU : " + (int)(cpuUsageTotal * 100) + "%";
-            }
-        }
-        public string AvailableRAM
-        {
-            get
-            {
-                return "Memory : " + (int)System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64 / 1048576 + "MB"; //1024*1024
-            }
-        }
-        #endregion
-
         #region WINDOW MANAGEMENT
         public MainWindow()
         {
@@ -282,7 +231,7 @@ namespace VideoCapture
 
         void INITS()
         {
-            InfoProcess_INIT();
+            cpu_mem._InfoProcess_INIT();
             ListDevices();
             actualWidth = 320;
             UpdateFilers();

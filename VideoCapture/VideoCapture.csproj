@@ -127,8 +127,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CPU_Memory.xaml.cs">
+      <DependentUpon>CPU_Memory.xaml</DependentUpon>
+    </Compile>
     <Compile Include="VideoInInfo.cs" />
     <Compile Include="VisibilityConverter.cs" />
+    <Page Include="CPU_Memory.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

@@ -5,11 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VideoCapture"
         mc:Ignorable="d"
-        Title="{Binding _title}" Height="200" Width="800"
+        Title="{Binding _title}" Height="200" Width="520"
         Loaded="Window_Loaded"
         Closing="Window_Closing"
-        SizeChanged="Window_SizeChanged" MouseEnter="Window_MouseEnter" MouseLeave="Window_MouseLeave"
-        
+        SizeChanged="Window_SizeChanged" 
+        MouseEnter="Window_MouseEnter" 
+        MouseLeave="Window_MouseLeave"        
         >
     <Window.Resources>
         <local:BitmapToBitmapImageConverter x:Key="bitmapConverter"/>
@@ -29,8 +30,7 @@
         <!--IMAGE CAPTURE-->
         <Image x:Name="image" Stretch="Uniform"
                Source="{Binding _imageSource, Mode=OneWay, NotifyOnSourceUpdated=True, Converter={StaticResource bitmapConverter}}"
-               MouseDown="img_mousedown"
-               />
+               MouseDown="img_mousedown"/>
 
         <!--IMAGE FILTRE-->
         <Image x:Name="imagecalque" Stretch="Uniform"/>
@@ -59,7 +59,7 @@
                         </MenuItem.Header>
                     </MenuItem>
                     <Separator />
-                    
+
                     <!-- Flip & Rotation -->
                     <MenuItem>
                         <MenuItem.Header>
@@ -93,7 +93,7 @@
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
-                        
+
                         <MenuItem Click="ctxm_flip_h_Click">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
@@ -111,7 +111,7 @@
                             </MenuItem.Header>
                         </MenuItem>
                     </MenuItem>
-                    
+
                     <Separator />
 
                     <!-- Filters -->
@@ -162,14 +162,14 @@
                 </ContextMenu>
             </Image.ContextMenu>
         </Image>
-        
+
         <!--MENU-->
         <Grid VerticalAlignment="Top" Name="grd_visu"  Background="#55ffffff">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            
+
             <!--MENU GAUCHE-->
             <StackPanel Grid.Column="0" Height="40" Orientation="Horizontal">
                 <StackPanel.Resources>
@@ -190,7 +190,7 @@
                 <CheckBox Content="Infos" IsChecked="{Binding _ShowCPUMem}" VerticalContentAlignment="Center" Margin="0,0,5,0" />
             </StackPanel>
         </Grid>
-        
+
         <!--Infos-->
         <Grid VerticalAlignment="Bottom" Visibility="{Binding _ShowCPUMem, Converter={StaticResource VisibilityConverter}}">
             <Grid.ColumnDefinitions>
@@ -204,11 +204,8 @@
             </StackPanel>
 
             <!--CPU MEM-->
-            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="#55ffffff">
-                <Label Content="{Binding CurrentCpuUsage}" FontSize="10"/>
-                <Label Content="{Binding AvailableRAM}" FontSize="10"/>
-            </StackPanel>
+            <local:CPU_Memory Grid.Column="1" x:Name="cpu_mem" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="#55ffffff"/>
         </Grid>
-        
+
     </Grid>
 </Window>
