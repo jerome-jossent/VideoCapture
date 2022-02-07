@@ -8,9 +8,8 @@
         Title="{Binding _title}" Height="200" Width="520"
         Loaded="Window_Loaded"
         Closing="Window_Closing"
-        SizeChanged="Window_SizeChanged" 
         MouseEnter="Window_MouseEnter" 
-        MouseLeave="Window_MouseLeave"        
+        MouseLeave="Window_MouseLeave"       
         >
     <Window.Resources>
         <local:BitmapToBitmapImageConverter x:Key="bitmapConverter"/>

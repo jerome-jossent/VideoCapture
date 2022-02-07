@@ -15,7 +15,7 @@ namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
     {
-        string version = "2021/12/27";
+        string version = "2022/02/07";
 
         #region VARIABLES & PARAMETERS
         // FPS
@@ -24,7 +24,9 @@ namespace VideoCapture
 
         // Image capturée
         Mat frame;
+        double frame_ratio=3;
         double actualWidth;
+
         bool flip_h;
         bool flip_v;
         RotateFlags? rotation;
@@ -95,7 +97,7 @@ namespace VideoCapture
                 OnPropertyChanged("_ShowCPUMem");
             }
         }
-        bool ShowCPUMem = true;
+        bool ShowCPUMem = false;
 
         public bool _HideWindowBar
         {
@@ -172,9 +174,14 @@ namespace VideoCapture
             CaptureCameraStop();
         }
 
-        void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
-            actualWidth = this.ActualWidth;
+            if (sizeInfo.WidthChanged) 
+                this.Width = sizeInfo.NewSize.Height * frame_ratio;
+            else 
+                this.Height = sizeInfo.NewSize.Width / frame_ratio;
+
+            actualWidth = this.Width;
         }
 
         void img_mousedown(object sender, MouseButtonEventArgs e)
@@ -233,7 +240,6 @@ namespace VideoCapture
         {
             cpu_mem._InfoProcess_INIT();
             ListDevices();
-            actualWidth = 320;
             UpdateFilers();
             ManageFilter("");
             _HideWindowBar = true;
@@ -287,7 +293,6 @@ namespace VideoCapture
             if (!isRunning)
                 Play();
         }
-
         #endregion
 
         #region CAPTURE MANAGEMENT
@@ -331,6 +336,9 @@ namespace VideoCapture
                         capture.Set(VideoCaptureProperties.FrameHeight, format.h);
                         capture.Set(VideoCaptureProperties.Fps, format.fr);
                         capture.Set(VideoCaptureProperties.FourCC, OpenCvSharp.FourCC.FromString(format.format));
+                        frame_ratio = (double)format.w / format.h;
+                        actualWidth = format.w;
+                        Application.Current.Dispatcher.Invoke(() => { Width = actualWidth; });
                         format = null;
                     }
 
@@ -357,7 +365,6 @@ namespace VideoCapture
         #endregion
 
         #region IMAGE MANAGEMENT
-
         void Show(Mat frame)
         {
             if (!frame.Empty())
@@ -434,18 +441,11 @@ namespace VideoCapture
         }
         #endregion
 
-        #region FILTERS
-
+        #region FILTERS \ Calque par dessus image
         void UpdateFilers()
         {
             filtres = new Dictionary<string, MenuItem>();
             ctxm_calque.Items.Clear();
-
-            //image_preview_filter = new System.Windows.Controls.Image();
-            //image_preview_filter.Width = 100;
-            //image_preview_filter.Height = 100;
-            //System.Windows.Media.RenderOptions.SetBitmapScalingMode(image_preview_filter, System.Windows.Media.BitmapScalingMode.Fant);
-            //ctxm_calque.Items.Add(image_preview_filter);
 
             // "Pick Filter"
             StackPanel sp = new StackPanel() { Orientation = Orientation.Horizontal };
@@ -488,7 +488,6 @@ namespace VideoCapture
                 im.Height = 100;
                 sp.Children.Add(im);
                 cp = new ContentPresenter();
-                //cp.Margin = new Thickness(10, 0, 0, 0);
                 cp.Content = fi.Name;
                 sp.Children.Add(cp);
                 MenuItem mi = new MenuItem();
