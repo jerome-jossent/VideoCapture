@@ -127,15 +127,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="CPU_Memory.xaml.cs">
-      <DependentUpon>CPU_Memory.xaml</DependentUpon>
-    </Compile>
     <Compile Include="VideoInInfo.cs" />
     <Compile Include="VisibilityConverter.cs" />
-    <Page Include="CPU_Memory.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -179,6 +172,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Standard_UC_JJO\Standard_UC_.Net4.7.2_JJO\Standard_UC_.Net4.7.2_JJO\Standard_UC_Net4_7_2_JJO.csproj">
+      <Project>{859512e7-50bf-40ac-a772-72df852098f4}</Project>
+      <Name>Standard_UC_Net4_7_2_JJO</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ImageProcessing\ImageProcessing.csproj">
       <Project>{45e48cad-d8c8-4a1c-bc81-0f81b0b5b1d8}</Project>
       <Name>ImageProcessing</Name>

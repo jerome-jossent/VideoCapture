@@ -15,7 +15,7 @@ namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
     {
-        string version = "2022/02/07";
+        string version = "2022/02/23";
 
         #region VARIABLES & PARAMETERS
         // FPS
@@ -39,6 +39,7 @@ namespace VideoCapture
         Thread thread;
         int indexDevice;
         VideoInInfo.Format format;
+        private bool newFormat;
         private string deviceName;
         private string formatName;
         Dictionary<string, VideoInInfo.Format> formats;
@@ -238,7 +239,6 @@ namespace VideoCapture
 
         void INITS()
         {
-            cpu_mem._InfoProcess_INIT();
             ListDevices();
             UpdateFilers();
             ManageFilter("");
@@ -286,7 +286,7 @@ namespace VideoCapture
         private void Combobox_CaptureDeviceFormat_Change(object sender, SelectionChangedEventArgs e)
         {
             format = formats[cbx_deviceFormat.SelectedValue as string];
-
+            newFormat = true;
             formatName = cbx_deviceFormat.Items[cbx_deviceFormat.SelectedIndex].ToString();
             OnPropertyChanged("_title");
 
@@ -330,7 +330,7 @@ namespace VideoCapture
                         actualindexDevice = indexDevice;
                     }
 
-                    if (format != null)
+                    if (newFormat)
                     {
                         capture.Set(VideoCaptureProperties.FrameWidth, format.w);
                         capture.Set(VideoCaptureProperties.FrameHeight, format.h);
@@ -339,7 +339,7 @@ namespace VideoCapture
                         frame_ratio = (double)format.w / format.h;
                         actualWidth = format.w;
                         Application.Current.Dispatcher.Invoke(() => { Width = actualWidth; });
-                        format = null;
+                        newFormat = false;
                     }
 
                     capture.Read(frame);
@@ -422,10 +422,24 @@ namespace VideoCapture
             ctxm_rotate270.IsChecked = false;
             switch (rotation)
             {
-                case RotateFlags.Rotate90Clockwise: ctxm_rotate90.IsChecked = true; break;
-                case RotateFlags.Rotate90Counterclockwise: ctxm_rotate270.IsChecked = true; break;
-                case RotateFlags.Rotate180: ctxm_rotate180.IsChecked = true; break;
+                case RotateFlags.Rotate90Clockwise:
+                    ctxm_rotate90.IsChecked = true;
+                    frame_ratio = (double)format.h / format.w;
+                    break;
+                case RotateFlags.Rotate90Counterclockwise:
+                    ctxm_rotate270.IsChecked = true;
+                    frame_ratio = (double)format.h / format.w;
+                    break;
+                case RotateFlags.Rotate180: 
+                    ctxm_rotate180.IsChecked = true;
+                    frame_ratio = (double)format.w / format.h;
+                    break;
+                case null:
+                    frame_ratio = (double)format.w / format.h;
+                    break;
             }
+            //force resize
+            Width++;
         }
 
         void ctxm_flip_h_Click(object sender, RoutedEventArgs e)

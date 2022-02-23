@@ -1,4 +1,4 @@
-﻿<Window x:Class="VideoCapture.MainWindow"
+﻿<Window xmlns:Standard_UC_Net4_7_2_JJO="clr-namespace:Standard_UC_Net4_7_2_JJO;assembly=Standard_UC_Net4_7_2_JJO"  xmlns:VideoCapture="clr-namespace:VideoCapture;assembly=Standard_UC_.Net4.7.2_JJO"  x:Class="VideoCapture.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -189,7 +189,6 @@
                 <CheckBox Content="Infos" IsChecked="{Binding _ShowCPUMem}" VerticalContentAlignment="Center" Margin="0,0,5,0" />
             </StackPanel>
         </Grid>
-
         <!--Infos-->
         <Grid VerticalAlignment="Bottom" Visibility="{Binding _ShowCPUMem, Converter={StaticResource VisibilityConverter}}">
             <Grid.ColumnDefinitions>
@@ -203,7 +202,7 @@
             </StackPanel>
 
             <!--CPU MEM-->
-            <local:CPU_Memory Grid.Column="1" x:Name="cpu_mem" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="#55ffffff"/>
+            <Standard_UC_Net4_7_2_JJO:CPU_Memory Grid.Column="1" x:Name="cpu_mem" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="#55ffffff"/>            
         </Grid>
 
     </Grid>
