@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31912.275
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31911.196
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VideoCapture", "VideoCapture\VideoCapture.csproj", "{A5A0E70C-F489-4E01-A09D-50232C9F139E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageProcessing", "ImageProcessing\ImageProcessing.csproj", "{45E48CAD-D8C8-4A1C-BC81-0F81B0B5B1D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Standard_UC_Net4_7_2_JJO", "..\Standard_UC_JJO\Standard_UC_.Net4.7.2_JJO\Standard_UC_.Net4.7.2_JJO\Standard_UC_Net4_7_2_JJO.csproj", "{859512E7-50BF-40AC-A772-72DF852098F4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{45E48CAD-D8C8-4A1C-BC81-0F81B0B5B1D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{45E48CAD-D8C8-4A1C-BC81-0F81B0B5B1D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{45E48CAD-D8C8-4A1C-BC81-0F81B0B5B1D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{859512E7-50BF-40AC-A772-72DF852098F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{859512E7-50BF-40AC-A772-72DF852098F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{859512E7-50BF-40AC-A772-72DF852098F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{859512E7-50BF-40AC-A772-72DF852098F4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

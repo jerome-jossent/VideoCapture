@@ -70,8 +70,11 @@ namespace VideoCapture
 
                         var format = GetVideoFormat(mediaType);
                         Format f = new Format(width, height, frameRate, format, index);
-                        formats.Add(f.Name, f);
-                        index++;
+                        if (!formats.ContainsKey(f.Name))
+                        {
+                            formats.Add(f.Name, f);
+                            index++;
+                        }
                     }
                 }
             }

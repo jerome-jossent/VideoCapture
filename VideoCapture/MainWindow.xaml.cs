@@ -15,7 +15,7 @@ namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
     {
-        string version = "2022/02/23";
+        string version = "2022/04/10";
 
         #region VARIABLES & PARAMETERS
         // FPS
