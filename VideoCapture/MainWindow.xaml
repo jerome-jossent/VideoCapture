@@ -8,8 +8,8 @@
         Title="{Binding _title}" Height="200" Width="520"
         Loaded="Window_Loaded"
         Closing="Window_Closing"
-        MouseEnter="Window_MouseEnter" 
-        MouseLeave="Window_MouseLeave"       
+        MouseLeave="Window_MouseLeave"
+        MouseMove="Window_MouseMove"
         >
     <Window.Resources>
         <local:BitmapToBitmapImageConverter x:Key="bitmapConverter"/>
@@ -48,6 +48,17 @@
                         </MenuItem.Header>
                     </MenuItem>
 
+                    <!-- Full screen -->
+                    <MenuItem IsCheckable="True" IsChecked="False" Name="ctxm_fullscreen" Click="ctxm_fullscreen_Switch_Click">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Name="ctxm_fullscreen_max" Width="20" Height="20" Source="Resources/Maximize.png" RenderOptions.BitmapScalingMode="Fant"/>
+                                <Image x:Name="ctxm_fullscreen_min" Width="20" Height="20" Source="Resources/Minimize.png" RenderOptions.BitmapScalingMode="Fant"/>
+                                <ContentPresenter x:Name="ctxm_fullscreen_txt" Margin="10,0,0,0" Content="..." />
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
+
                     <!-- Only Picture -->
                     <MenuItem IsCheckable="True" IsChecked="False" Name="ctxm_hideothers" Click="ctxm_hideothers_Click">
                         <MenuItem.Header>
@@ -58,6 +69,8 @@
                         </MenuItem.Header>
                     </MenuItem>
                     <Separator />
+                    
+                    
 
                     <!-- Flip & Rotation -->
                     <MenuItem>

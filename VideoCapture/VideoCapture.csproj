@@ -251,6 +251,10 @@
     <Resource Include="Resources\arrow_turn_left.png" />
     <Resource Include="Resources\arrow_turn_right.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Maximize.png" />
+    <Resource Include="Resources\Minimize.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

@@ -15,7 +15,7 @@ namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
     {
-        string version = "2022/04/10";
+        string version = "2022/04/19";
 
         #region VARIABLES & PARAMETERS
         // FPS
@@ -45,6 +45,9 @@ namespace VideoCapture
         Dictionary<string, VideoInInfo.Format> formats;
         OpenCvSharp.VideoCapture capture;
         bool isRunning = false;
+
+        System.Windows.Threading.DispatcherTimer mouseEnterEventDelayTimer = new System.Windows.Threading.DispatcherTimer();
+        double MouseEnter_Delay_sec = 3;
         #endregion
 
         #region VARIABLES BINDINGS
@@ -112,6 +115,20 @@ namespace VideoCapture
             }
         }
         bool HideWindowBar;
+
+
+        public bool _fullScreen
+        {
+            get { return fullScreen; }
+            set
+            {
+                fullScreen = value;
+                ctxm_fullscreen.IsChecked = _fullScreen;
+                FullScreenManagement();
+                OnPropertyChanged("_fullScreen");
+            }
+        }
+        bool fullScreen;
 
         public string _version
         {
@@ -194,14 +211,54 @@ namespace VideoCapture
             }
         }
 
-        void Window_MouseEnter(object sender, MouseEventArgs e)
+        void MouseEnterEventDelay_Init()
         {
-            grd_visu.Visibility = Visibility.Visible;
+            mouseEnterEventDelayTimer.Interval = TimeSpan.FromSeconds(MouseEnter_Delay_sec);
+            mouseEnterEventDelayTimer.Tick += Window_MouseEnter_Tick;
+        }
+
+        void Window_MouseEnter_Tick(object sender, EventArgs e)
+        {
+            grd_visu_Collapse();
         }
 
         void Window_MouseLeave(object sender, MouseEventArgs e)
         {
+            grd_visu_Collapse();
+        }
+
+        void Window_MouseMove(object sender, MouseEventArgs e)
+        {
+            grd_visu.Visibility = Visibility.Visible;
+            mouseEnterEventDelayTimer.Start();
+        }
+
+        void grd_visu_Collapse()
+        {
             grd_visu.Visibility = Visibility.Collapsed;
+            mouseEnterEventDelayTimer.Stop();
+        }
+
+        void FullScreenManagement()
+        {
+            if (fullScreen)
+            {
+                //icon
+                ctxm_fullscreen_max.Visibility = Visibility.Collapsed;
+                ctxm_fullscreen_min.Visibility = Visibility.Visible;
+                ctxm_fullscreen_txt.Content = "Window mode";
+                //fenetre
+                WindowState = WindowState.Maximized;
+            }
+            else
+            {
+                //icon
+                ctxm_fullscreen_max.Visibility = Visibility.Visible;
+                ctxm_fullscreen_min.Visibility = Visibility.Collapsed;
+                ctxm_fullscreen_txt.Content = "Fullscreen";
+                //fenetre
+                WindowState = WindowState.Normal;
+            }
         }
         #endregion
 
@@ -209,6 +266,10 @@ namespace VideoCapture
         private void ctxm_alwaysontop_Click(object sender, RoutedEventArgs e)
         {
             Topmost = ctxm_alwaysontop.IsChecked;
+        }
+        private void ctxm_fullscreen_Switch_Click(object sender, RoutedEventArgs e)
+        {
+            _fullScreen = !_fullScreen;
         }
 
         private void ctxm_hideothers_Click(object sender, RoutedEventArgs e)
@@ -242,6 +303,8 @@ namespace VideoCapture
             ListDevices();
             UpdateFilers();
             ManageFilter("");
+            FullScreenManagement();
+            MouseEnterEventDelay_Init();
             _HideWindowBar = true;
         }
 
