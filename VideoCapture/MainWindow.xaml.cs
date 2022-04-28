@@ -15,7 +15,7 @@ namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
     {
-        string version = "2022/04/19";
+        string version = "2022/04/28";
 
         #region VARIABLES & PARAMETERS
         // FPS
@@ -123,7 +123,6 @@ namespace VideoCapture
             set
             {
                 fullScreen = value;
-                ctxm_fullscreen.IsChecked = _fullScreen;
                 FullScreenManagement();
                 OnPropertyChanged("_fullScreen");
             }
