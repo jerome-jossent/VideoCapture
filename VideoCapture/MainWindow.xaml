@@ -205,8 +205,22 @@
 
                 <Image Source="/Resources/refresh.png" MouseDown="AllDevices_Click" ToolTip="Get all devices"/>
             </StackPanel>
+
+            <StackPanel Grid.Column="0" Grid.Row="1" Height="40" Orientation="Horizontal">
+                <StackPanel.Resources>
+                    <Style TargetType="{x:Type Image}">
+                        <Setter Property="Margin" Value="2"/>
+                    </Style>
+                    <Style TargetType="{x:Type ComboBox}">
+                        <Setter Property="Margin" Value="2"/>
+                    </Style>
+                </StackPanel.Resources>
+
+                <ComboBox Name="cbx_deviceFormat" Height="36" SelectionChanged="Combobox_CaptureDeviceFormat_Change" VerticalContentAlignment="Center"  ToolTip="Format"/>
+
+                <Image Source="/Resources/refresh.png" MouseDown="ScanFormats_Click" ToolTip="Scan &amp; Erase empty formats"/>
+            </StackPanel>
             
-            <ComboBox Grid.Column="0" Grid.Row="1" Name="cbx_deviceFormat" Height="36" SelectionChanged="Combobox_CaptureDeviceFormat_Change" VerticalContentAlignment="Center"  ToolTip="Format"/>
 
             <!--MENU DROIT-->
             <CheckBox Grid.Column="2" Height="40" Content="Infos" IsChecked="{Binding _ShowCPUMem}" VerticalContentAlignment="Center" Margin="0,0,5,0" HorizontalAlignment="Right" />

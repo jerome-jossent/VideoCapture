@@ -24,7 +24,7 @@ namespace VideoCapture
 
         // Image capturée
         Mat frame;
-        double frame_ratio=3;
+        double frame_ratio = 3;
         double actualWidth;
 
         bool flip_h;
@@ -48,6 +48,8 @@ namespace VideoCapture
 
         System.Windows.Threading.DispatcherTimer mouseEnterEventDelayTimer = new System.Windows.Threading.DispatcherTimer();
         double MouseEnter_Delay_sec = 3;
+        long framegrabbed = 0;
+        long framereallygrabbed = 0;
         #endregion
 
         #region VARIABLES BINDINGS
@@ -193,9 +195,9 @@ namespace VideoCapture
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
-            if (sizeInfo.WidthChanged) 
+            if (sizeInfo.WidthChanged)
                 this.Width = sizeInfo.NewSize.Height * frame_ratio;
-            else 
+            else
                 this.Height = sizeInfo.NewSize.Width / frame_ratio;
 
             actualWidth = this.Width;
@@ -313,11 +315,42 @@ namespace VideoCapture
             ListDevices();
         }
 
-        private void ListDevices()
+        void ListDevices()
         {
             var devices = VideoInInfo.EnumerateVideoDevices_JJ();
             if (cbx_device != null)
                 cbx_device.ItemsSource = devices.Select(d => d.Name).ToList();
+        }
+
+        void ScanFormats_Click(object sender, MouseButtonEventArgs e)
+        {
+            List<string> availabaleformats = ScanFormats();
+        }
+
+        List<string> ScanFormats()
+        {
+            List<string> availabaleformats = new List<string>();
+
+            foreach (var format in formats.Keys)
+            {
+                if (TestFormat(format))
+                    availabaleformats.Add(format);
+            }
+
+            return availabaleformats;
+        }
+
+        private bool TestFormat(string format)
+        {
+            framegrabbed = 0;
+            framereallygrabbed = 0;
+            //capture jusqu'à 5 frames (parce que 1 parfois ne suffit pas) et le format est retenu si la frame n'est pas vide (taille 0x0)
+            cbx_deviceFormat.SelectedValue = format;
+
+            while (framegrabbed < 5 && framegrabbed == 0)
+                Thread.Sleep(5);
+            
+            return framegrabbed>0;
         }
 
         void Play()
@@ -405,22 +438,29 @@ namespace VideoCapture
                     }
 
                     capture.Read(frame);
-                    if (flip_h && flip_v)
-                    {
-                        frame = frame.Flip(FlipMode.XY);
-                    }
-                    else
-                    {
-                        if (flip_h)
-                            frame = frame.Flip(FlipMode.Y);
-                        if (flip_v)
-                            frame = frame.Flip(FlipMode.X);
-                    }
+                    framegrabbed++;
 
-                    if (rotation != null)
-                        Cv2.Rotate(frame, frame, (RotateFlags)rotation);
+                    if (!frame.Empty())
+                    {
+                        framereallygrabbed++;
 
-                    Show(frame);
+                        if (flip_h && flip_v)
+                        {
+                            frame = frame.Flip(FlipMode.XY);
+                        }
+                        else
+                        {
+                            if (flip_h)
+                                frame = frame.Flip(FlipMode.Y);
+                            if (flip_v)
+                                frame = frame.Flip(FlipMode.X);
+                        }
+
+                        if (rotation != null)
+                            Cv2.Rotate(frame, frame, (RotateFlags)rotation);
+
+                        Show(frame);
+                    }
                 }
             }
         }
@@ -492,7 +532,7 @@ namespace VideoCapture
                     ctxm_rotate270.IsChecked = true;
                     frame_ratio = (double)format.h / format.w;
                     break;
-                case RotateFlags.Rotate180: 
+                case RotateFlags.Rotate180:
                     ctxm_rotate180.IsChecked = true;
                     frame_ratio = (double)format.w / format.h;
                     break;
@@ -640,5 +680,6 @@ namespace VideoCapture
                 item.Value.IsChecked = (item.Key == filtername);
         }
         #endregion
+
     }
 }
