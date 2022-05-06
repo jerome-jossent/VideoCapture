@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VideoCapture"
         mc:Ignorable="d"
-        Title="{Binding _title}" Height="200" Width="520"
+        Title="{Binding _title}" Height="250" Width="250"
         Loaded="Window_Loaded"
         Closing="Window_Closing"
         MouseLeave="Window_MouseLeave"
@@ -201,7 +201,7 @@
                     </Style>
                 </StackPanel.Resources>
 
-                <ComboBox Name="cbx_device" SelectionChanged="Combobox_CaptureDevice_Change" VerticalContentAlignment="Center"  ToolTip="Device"/>
+                <ComboBox Name="cbx_device" SelectionChanged="Combobox_CaptureDevice_Change" VerticalContentAlignment="Center" ToolTip="Device"/>
 
                 <Image Source="/Resources/refresh.png" MouseDown="AllDevices_Click" ToolTip="Get all devices"/>
             </StackPanel>
@@ -216,9 +216,8 @@
                     </Style>
                 </StackPanel.Resources>
 
-                <ComboBox Name="cbx_deviceFormat" Height="36" SelectionChanged="Combobox_CaptureDeviceFormat_Change" VerticalContentAlignment="Center"  ToolTip="Format"/>
+                <ComboBox Name="cbx_deviceFormat" Height="36" SelectionChanged="Combobox_CaptureDeviceFormat_Change" VerticalContentAlignment="Center" ToolTip="Format"/>
 
-                <Image Source="/Resources/refresh.png" MouseDown="ScanFormats_Click" ToolTip="Scan &amp; Erase empty formats"/>
             </StackPanel>
             
 
