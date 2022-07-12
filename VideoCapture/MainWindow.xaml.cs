@@ -355,6 +355,7 @@ namespace VideoCapture
 
             //set default format
             cbx_deviceFormat.SelectedIndex = 0;
+            newFormat = true;
         }
 
         private void Combobox_CaptureDeviceFormat_Change(object sender, SelectionChangedEventArgs e)
@@ -410,7 +411,7 @@ namespace VideoCapture
             capture.Set(VideoCaptureProperties.Fps, fps);
             capture.Set(VideoCaptureProperties.FourCC, OpenCvSharp.FourCC.FromString(current_fourcc));
 
-            newFormat = false;
+            //newFormat = false;
 
             if (capture.IsOpened())
             {
