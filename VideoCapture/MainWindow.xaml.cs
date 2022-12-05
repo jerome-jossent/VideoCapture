@@ -15,7 +15,7 @@ namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
     {
-        string version = "2022/04/28";
+        string version = "2022/12/05";
 
         #region VARIABLES & PARAMETERS
         // FPS
@@ -51,6 +51,12 @@ namespace VideoCapture
         long framegrabbed = 0;
         long framereallygrabbed = 0;
         #endregion
+
+        DirectShowLib.DsDevice[] devices;
+        DirectShowLib.DsDevice current_device;
+
+        bool _HideMenu;
+        bool forceResize;
 
         #region VARIABLES BINDINGS
         public event PropertyChangedEventHandler PropertyChanged;
@@ -172,6 +178,44 @@ namespace VideoCapture
                 }
             }
         }
+
+        public string ScreenshotFolder
+        {
+            get
+            {
+                return Properties.Settings.Default.ScreenshotFolder;
+            }
+            set
+            {
+                Properties.Settings.Default.ScreenshotFolder = value;
+                Properties.Settings.Default.Save();
+                OnPropertyChanged("ScreenshotFolder");
+            }
+        }
+
+
+        public string ScreenshotCount
+        {
+            get
+            {
+                return screenshotCount.ToString();
+            }
+        }
+
+        public int screenshotCount
+        {
+            get
+            {
+                return screenshot_Count;
+            }
+            set
+            {
+                screenshot_Count = value;
+                OnPropertyChanged("ScreenshotCount");
+            }
+        }
+        int screenshot_Count = 0;
+
         System.Drawing.Bitmap imageCalque;
         #endregion
 
@@ -195,6 +239,8 @@ namespace VideoCapture
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
+            if (forceResize) return;
+
             if (sizeInfo.WidthChanged)
                 this.Width = sizeInfo.NewSize.Height * frame_ratio;
             else
@@ -230,8 +276,11 @@ namespace VideoCapture
 
         void Window_MouseMove(object sender, MouseEventArgs e)
         {
-            grd_visu.Visibility = Visibility.Visible;
-            mouseEnterEventDelayTimer.Start();
+            if (!_HideMenu)
+            {
+                grd_visu.Visibility = Visibility.Visible;
+                mouseEnterEventDelayTimer.Start();
+            }
         }
 
         void grd_visu_Collapse()
@@ -280,10 +329,29 @@ namespace VideoCapture
             _fullScreen = !_fullScreen;
         }
 
+        private void ctxm_nativesize_Switch_Click(object sender, RoutedEventArgs e)
+        {
+            if (frame != null && !frame.Empty())
+            {
+                forceResize = true;
+                Width = frame.Width;
+                Height = frame.Height;
+                actualWidth = Width;
+                forceResize = false;
+            }
+        }
+
         private void ctxm_hideothers_Click(object sender, RoutedEventArgs e)
         {
             _HideWindowBar = !_HideWindowBar;
             ctxm_hideothers.IsChecked = _HideWindowBar;
+        }
+
+        private void ctxm_overlaidMenu_Click(object sender, RoutedEventArgs e)
+        {
+            _HideMenu = !_HideMenu;
+            if (_HideMenu)
+                grd_visu.Visibility = Visibility.Collapsed;
         }
 
         void WindowBarManagement()
@@ -316,22 +384,53 @@ namespace VideoCapture
             _HideWindowBar = true;
         }
 
-
+        #region SCREENSHOT
         private void Screenshot_Click(object sender, MouseButtonEventArgs e)
         {
             Screenshot();
         }
 
-        private void Screenshot()
+        private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            string path = null;
-
-            if (path != null)
-                frame.SaveImage(path);
-
+            switch (e.Key)
+            {
+                case Key.Space:
+                    Screenshot();
+                    break;
+            }
         }
 
+        private void Screenshot()
+        {
+            if (ScreenshotFolder != null && System.IO.Directory.Exists(ScreenshotFolder))
+                if (frame != null && !frame.Empty())
+                {
+                    string extension = ".jpg";
+                    string filename = ScreenshotFolder + DateTime.Now.ToString("yyyy_MM_dd - HH_mm_ss.fff") + extension;
+                    frame.SaveImage(filename);
+                    screenshotCount++;
+                }
+        }
 
+        private void ScreenshotFolder_Click(object sender, MouseButtonEventArgs e)
+        {
+            Set_ScreenshotFolder();
+        }
+
+        private void Set_ScreenshotFolder()
+        {
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                if (ScreenshotFolder != null)
+                    dialog.SelectedPath = ScreenshotFolder;
+                System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    ScreenshotFolder = dialog.SelectedPath;
+                }
+            }
+        }
+        #endregion
 
         #region DEVICES MANAGEMENT
         private void AllDevices_Click(object sender, MouseButtonEventArgs e)
@@ -341,7 +440,7 @@ namespace VideoCapture
 
         void ListDevices()
         {
-            var devices = VideoInInfo.EnumerateVideoDevices_JJ();
+            devices = VideoInInfo.EnumerateVideoDevices_JJ();
             if (cbx_device != null)
                 cbx_device.ItemsSource = devices.Select(d => d.Name).ToList();
         }
@@ -357,6 +456,7 @@ namespace VideoCapture
         private void Combobox_CaptureDevice_Change(object sender, SelectionChangedEventArgs e)
         {
             indexDevice = cbx_device.SelectedIndex;
+            current_device = devices[indexDevice];
             try
             {
                 formats = VideoInInfo.EnumerateSupportedFormats_JJ(indexDevice);
@@ -459,10 +559,8 @@ namespace VideoCapture
             {
                 while (isRunning)
                 {
-
-
                     if (indexDevice != current_indexDevice)
-                    {  
+                    {
                         capture = new OpenCvSharp.VideoCapture(indexDevice);
                         capture.Open(indexDevice, VideoCaptureAPIs.DSHOW);
                         current_indexDevice = indexDevice;
@@ -475,7 +573,7 @@ namespace VideoCapture
                         //h = (int)capture.Get(VideoCaptureProperties.FrameHeight);
                         //fps = (float)capture.Get(VideoCaptureProperties.Fps);
 
-                       // current_fourcc = Get_current_fourcc();
+                        // current_fourcc = Get_current_fourcc();
 
                         capture.Set(VideoCaptureProperties.FrameWidth, format.w);
                         capture.Set(VideoCaptureProperties.FrameHeight, format.h);
@@ -570,12 +668,18 @@ namespace VideoCapture
         {
             if (!frame.Empty())
             {
+                Mat frameShowed;
                 if (actualWidth < frame.Width)
-                    Cv2.Resize(frame, frame, new OpenCvSharp.Size(actualWidth, actualWidth / frame.Width * frame.Height), interpolation: InterpolationFlags.Cubic);
+                {
+                    frameShowed = new Mat();
+                    Cv2.Resize(frame, frameShowed, new OpenCvSharp.Size(actualWidth, actualWidth / frame.Width * frame.Height), interpolation: InterpolationFlags.Cubic);
+                }
+                else
+                    frameShowed = frame.Clone();
 
-                _imageSource = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(frame);
+                _imageSource = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(frameShowed);
 
-                _Infos = "(" + capture.FourCC + ") " + capture.FrameWidth + "*" + capture.FrameHeight + " [" + (int)capture.Fps + "fps] " + frame.Width + "*" + frame.Height;
+                _Infos = "(" + capture.FourCC + ") " + capture.FrameWidth + "*" + capture.FrameHeight + " [" + (int)capture.Fps + "fps] " + frameShowed.Width + "*" + frameShowed.Height;
             }
 
             FPS();
@@ -780,9 +884,143 @@ namespace VideoCapture
         }
         #endregion
 
-        private void TEST_Click(object sender, MouseButtonEventArgs e)
+
+
+
+
+
+
+
+
+
+
+        #region CAMERA SETTINGS
+
+
+        //A (modified) definition of OleCreatePropertyFrame found here: http://groups.google.no/group/microsoft.public.dotnet.languages.csharp/browse_thread/thread/db794e9779144a46/55dbed2bab4cd772?lnk=st&q=[DllImport(%22olepro32.dll%22)]&rnum=1&hl=no#55dbed2bab4cd772
+        [System.Runtime.InteropServices.DllImport("oleaut32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, ExactSpelling = true)]
+        public static extern int OleCreatePropertyFrame(
+            IntPtr hwndOwner,
+            int x,
+            int y,
+            [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string lpszCaption,
+            int cObjects,
+            [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Interface, ArraySubType=System.Runtime.InteropServices.UnmanagedType.IUnknown)]
+            ref object ppUnk,
+            int cPages,
+            IntPtr lpPageClsID,
+            int lcid,
+            int dwReserved,
+            IntPtr lpvReserved);
+
+
+
+
+
+        private void CAMERA_SETTINGS_Click(object sender, MouseButtonEventArgs e)
         {
-            newFormat = true;
+            string name = current_device.Name;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            DirectShowLib.IBaseFilter theDevice = null;
+
+            //Release COM objects
+            if (theDevice != null)
+            {
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(theDevice);
+                theDevice = null;
+            }
+            //Create the filter for the selected video input device
+            string devicepath = current_device.Name; // comboBox1.SelectedItem.ToString();
+            theDevice = CreateFilter(DirectShowLib.FilterCategory.VideoInputDevice, devicepath);
+
+
+
+
+
+
+            DirectShowLib.IBaseFilter dev = theDevice;
+            //Get the ISpecifyPropertyPages for the filter
+            DirectShowLib.ISpecifyPropertyPages pProp = dev as DirectShowLib.ISpecifyPropertyPages;
+            int hr = 0;
+
+            if (pProp == null)
+            {
+                //If the filter doesn't implement ISpecifyPropertyPages, try displaying IAMVfwCompressDialogs instead!
+                DirectShowLib.IAMVfwCompressDialogs compressDialog = dev as DirectShowLib.IAMVfwCompressDialogs;
+                if (compressDialog != null)
+                {
+
+                    hr = compressDialog.ShowDialog(DirectShowLib.VfwCompressDialogs.Config, IntPtr.Zero);
+                    DirectShowLib.DsError.ThrowExceptionForHR(hr);
+                }
+                return;
+            }
+
+            //Get the name of the filter from the FilterInfo struct
+            DirectShowLib.FilterInfo filterInfo;
+            hr = dev.QueryFilterInfo(out filterInfo);
+            DirectShowLib.DsError.ThrowExceptionForHR(hr);
+
+            // Get the propertypages from the property bag
+            DirectShowLib.DsCAUUID caGUID;
+            hr = pProp.GetPages(out caGUID);
+            DirectShowLib.DsError.ThrowExceptionForHR(hr);
+
+            // Create and display the OlePropertyFrame
+            object oDevice = (object)dev;
+
+
+            //hr = OleCreatePropertyFrame(this.Handle, 0, 0, filterInfo.achName, 1, ref oDevice, caGUID.cElems, caGUID.pElems, 0, 0, IntPtr.Zero);
+            hr = OleCreatePropertyFrame(new System.Windows.Interop.WindowInteropHelper(this).Handle, 0, 0, filterInfo.achName, 1, ref oDevice, caGUID.cElems, caGUID.pElems, 0, 0, IntPtr.Zero);
+            DirectShowLib.DsError.ThrowExceptionForHR(hr);
+
+
+
+            // Release COM objects
+            System.Runtime.InteropServices.Marshal.FreeCoTaskMem(caGUID.pElems);
+            System.Runtime.InteropServices.Marshal.ReleaseComObject(pProp);
+            if (filterInfo.pGraph != null)
+            {
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(filterInfo.pGraph);
+            }
         }
+
+        /// <summary>
+        /// Enumerates all filters of the selected category and returns the IBaseFilter for the 
+        /// filter described in friendlyname
+        /// </summary>
+        /// <param name="category">Category of the filter</param>
+        /// <param name="friendlyname">Friendly name of the filter</param>
+        /// <returns>IBaseFilter for the device</returns>
+        private DirectShowLib.IBaseFilter CreateFilter(Guid category, string friendlyname)
+        {
+            object source = null;
+            Guid iid = typeof(DirectShowLib.IBaseFilter).GUID;
+            foreach (DirectShowLib.DsDevice device in DirectShowLib.DsDevice.GetDevicesOfCat(category))
+            {
+                if (device.Name.CompareTo(friendlyname) == 0)
+                {
+                    device.Mon.BindToObject(null, null, ref iid, out source);
+                    break;
+                }
+            }
+
+            return (DirectShowLib.IBaseFilter)source;
+        }
+        #endregion
     }
 }

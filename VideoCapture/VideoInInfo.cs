@@ -129,6 +129,15 @@ namespace VideoCapture
             return capDevicesDS;
         }
 
+        //public static void DisplayParameters_JJ(int deviceindex)
+        //{
+        //    var devices = EnumerateVideoDevices();
+
+        //        var device = devices[deviceindex];
+        //        var mediaSource = device.ActivateObject<MediaSource>();
+        //    device.
+        //}
+
 
         public static Activate[] EnumerateVideoDevices()
         {

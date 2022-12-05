@@ -2,23 +2,8 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="VideoCapture.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="video_path_in" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="video_path_out" Type="System.String" Scope="User">
-      <Value Profile="(Default)">"D:\\out.avi"</Value>
-    </Setting>
-    <Setting Name="IA_ServerIP" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="IA_ServerPort" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
-    <Setting Name="results_path" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="results_path_in" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+    <Setting Name="ScreenshotFolder" Type="System.String" Scope="User">
+      <Value Profile="(Default)">"?"</Value>
     </Setting>
   </Settings>
 </SettingsFile>

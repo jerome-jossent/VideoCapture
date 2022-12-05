@@ -9,7 +9,7 @@
         Loaded="Window_Loaded"
         Closing="Window_Closing"
         MouseLeave="Window_MouseLeave"
-        MouseMove="Window_MouseMove"
+        MouseMove="Window_MouseMove" KeyDown="Window_KeyDown"
         >
     <Window.Resources>
         <local:BitmapToBitmapImageConverter x:Key="bitmapConverter"/>
@@ -58,19 +58,38 @@
                             </StackPanel>
                         </MenuItem.Header>
                     </MenuItem>
+                    
+                    <!-- Set Native Size -->
+                    <MenuItem Name="ctxm_nativesize" Click="ctxm_nativesize_Switch_Click">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="20" Height="20" Source="Resources/NativeSize.png" RenderOptions.BitmapScalingMode="Fant"/>
+                                <ContentPresenter Margin="10,0,0,0" Content="Native size" />
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
 
+                    <Separator />
                     <!-- Only Picture -->
                     <MenuItem IsCheckable="True" IsChecked="False" Name="ctxm_hideothers" Click="ctxm_hideothers_Click">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
-                                <Image Width="20" Height="20" Source="Resources/camera.png" RenderOptions.BitmapScalingMode="Fant"/>
-                                <ContentPresenter Margin="10,0,0,0" Content="Hide Window's Bar" />
+                                <Image Width="20" Height="20" Source="/Resources/window_s_bar.png" RenderOptions.BitmapScalingMode="Fant"/>
+                                <ContentPresenter Margin="10,0,0,0" Content="Hide Window's bar" />
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
+
+                    <!-- Show/Hide Overlaid Menu -->
+                    <MenuItem IsCheckable="True" IsChecked="False" Name="ctxm_overlaidMenu" Click="ctxm_overlaidMenu_Click">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="20" Height="20" Source="Resources/Settings.png" RenderOptions.BitmapScalingMode="Fant"/>
+                                <ContentPresenter Margin="10,0,0,0" Content="Hide overlaid menu" />
                             </StackPanel>
                         </MenuItem.Header>
                     </MenuItem>
                     <Separator />
-
-
 
                     <!-- Flip & Rotation -->
                     <MenuItem>
@@ -93,7 +112,7 @@
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <Image Width="30" Height="30" Source="/Resources/arrow_turn_left.png" RenderOptions.BitmapScalingMode="Fant"/>
-                                    <ContentPresenter Margin="10,0,0,0" Content="Rotat -90°" />
+                                    <ContentPresenter Margin="10,0,0,0" Content="Rotate -90°" />
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
@@ -166,7 +185,7 @@
                     <MenuItem Click="ctxm_quit_Click">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
-                                <Image Width="20" Height="20" Source="Resources/Cross.png" RenderOptions.BitmapScalingMode="Fant"/>
+                                <Image Width="20" Height="20" Source="Resources/cross.png" RenderOptions.BitmapScalingMode="Fant"/>
                                 <ContentPresenter Margin="10,0,0,0" Content="Quit" />
                             </StackPanel>
                         </MenuItem.Header>
@@ -184,14 +203,12 @@
                 <ColumnDefinition Width="auto"/>
             </Grid.ColumnDefinitions>
 
-
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-
-            <!--MENU GAUCHE-->
-
+            
+            <!--MENU GAUCHE 1-->
             <StackPanel Grid.Column="0" Grid.Row="0" Height="40" Orientation="Horizontal">
                 <StackPanel.Resources>
                     <Style TargetType="{x:Type Image}">
@@ -205,7 +222,6 @@
                 <ComboBox Name="cbx_device" SelectionChanged="Combobox_CaptureDevice_Change" VerticalContentAlignment="Center" ToolTip="Device"/>
 
                 <Image Source="/Resources/refresh.png" MouseDown="AllDevices_Click" ToolTip="Get all devices"/>
-                <!--<Image Source="/Resources/camera.png" MouseDown="Screenshot_Click" ToolTip="Take picture"/>-->
             </StackPanel>
 
             <StackPanel Grid.Column="0" Grid.Row="1" Height="40" Orientation="Horizontal">
@@ -219,10 +235,12 @@
                 </StackPanel.Resources>
 
                 <ComboBox Name="cbx_deviceFormat" Height="36" SelectionChanged="Combobox_CaptureDeviceFormat_Change" VerticalContentAlignment="Center" ToolTip="Format"/>
+                
+                <Image Source="/Resources/camera_settings.png" MouseDown="CAMERA_SETTINGS_Click" ToolTip="TEST"/>
             </StackPanel>
 
-
-            <StackPanel Grid.Column="1" Grid.Row="0" Height="40" Orientation="Horizontal">
+            <!--MENU GAUCHE 2-->
+            <StackPanel Grid.Column="1" Margin="20,0,0,0" Grid.Row="0" Height="40" Orientation="Horizontal">
                 <StackPanel.Resources>
                     <Style TargetType="{x:Type Image}">
                         <Setter Property="Margin" Value="2"/>
@@ -232,8 +250,11 @@
                     </Style>
                 </StackPanel.Resources>
 
-                <Image Source="/Resources/camera.png" MouseDown="Screenshot_Click" ToolTip="Take picture"/>
-                <Image Source="/Resources/pin.png" MouseDown="TEST_Click" ToolTip="TEST"/>
+                <!--<Image Source="/Resources/Folder.png" x:Name="btn_ScreenshotFolder" MouseDown="ScreenshotFolder_Click"/>-->
+                <Image Source="/Resources/Folder.png" MouseDown="ScreenshotFolder_Click" ToolTip="{Binding ScreenshotFolder}"/>
+                <Image Source="/Resources/camera.png" MouseDown="Screenshot_Click" ToolTip="Take picture (also work with space bar)"/>
+                <Label Content="{Binding ScreenshotCount}" VerticalAlignment="Center"/>
+
             </StackPanel>
 
             <!--MENU DROIT-->
