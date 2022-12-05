@@ -179,6 +179,7 @@
         <Grid VerticalAlignment="Top" Name="grd_visu"  Background="#55ffffff">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="auto"/>
             </Grid.ColumnDefinitions>
@@ -204,6 +205,7 @@
                 <ComboBox Name="cbx_device" SelectionChanged="Combobox_CaptureDevice_Change" VerticalContentAlignment="Center" ToolTip="Device"/>
 
                 <Image Source="/Resources/refresh.png" MouseDown="AllDevices_Click" ToolTip="Get all devices"/>
+                <!--<Image Source="/Resources/camera.png" MouseDown="Screenshot_Click" ToolTip="Take picture"/>-->
             </StackPanel>
 
             <StackPanel Grid.Column="0" Grid.Row="1" Height="40" Orientation="Horizontal">
@@ -217,9 +219,22 @@
                 </StackPanel.Resources>
 
                 <ComboBox Name="cbx_deviceFormat" Height="36" SelectionChanged="Combobox_CaptureDeviceFormat_Change" VerticalContentAlignment="Center" ToolTip="Format"/>
-
             </StackPanel>
-            
+
+
+            <StackPanel Grid.Column="1" Grid.Row="0" Height="40" Orientation="Horizontal">
+                <StackPanel.Resources>
+                    <Style TargetType="{x:Type Image}">
+                        <Setter Property="Margin" Value="2"/>
+                    </Style>
+                    <Style TargetType="{x:Type ComboBox}">
+                        <Setter Property="Margin" Value="2"/>
+                    </Style>
+                </StackPanel.Resources>
+
+                <Image Source="/Resources/camera.png" MouseDown="Screenshot_Click" ToolTip="Take picture"/>
+                <Image Source="/Resources/pin.png" MouseDown="TEST_Click" ToolTip="TEST"/>
+            </StackPanel>
 
             <!--MENU DROIT-->
             <CheckBox Grid.Column="2" Height="40" Content="Infos" IsChecked="{Binding _ShowCPUMem}" VerticalContentAlignment="Center" Margin="0,0,5,0" HorizontalAlignment="Right" />

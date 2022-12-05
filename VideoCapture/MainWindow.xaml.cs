@@ -316,6 +316,23 @@ namespace VideoCapture
             _HideWindowBar = true;
         }
 
+
+        private void Screenshot_Click(object sender, MouseButtonEventArgs e)
+        {
+            Screenshot();
+        }
+
+        private void Screenshot()
+        {
+            string path = null;
+
+            if (path != null)
+                frame.SaveImage(path);
+
+        }
+
+
+
         #region DEVICES MANAGEMENT
         private void AllDevices_Click(object sender, MouseButtonEventArgs e)
         {
@@ -355,18 +372,19 @@ namespace VideoCapture
 
             //set default format
             cbx_deviceFormat.SelectedIndex = 0;
-            newFormat = true;
+            //newFormat = true;
         }
 
         private void Combobox_CaptureDeviceFormat_Change(object sender, SelectionChangedEventArgs e)
         {
             format = formats[cbx_deviceFormat.SelectedValue as string];
-            newFormat = true;
             formatName = cbx_deviceFormat.Items[cbx_deviceFormat.SelectedIndex].ToString();
             OnPropertyChanged("_title");
 
             if (!isRunning)
                 Play();
+
+            newFormat = true;
         }
         #endregion
 
@@ -393,86 +411,125 @@ namespace VideoCapture
             }
         }
 
+        string Get_current_fourcc()
+        {
+            int intfourcc = (int)capture.Get(VideoCaptureProperties.FourCC);
+
+            byte[] bytesfourcc = BitConverter.GetBytes(intfourcc);
+            char c1 = Convert.ToChar(bytesfourcc[0]);
+            char c2 = Convert.ToChar(bytesfourcc[1]);
+            char c3 = Convert.ToChar(bytesfourcc[2]);
+            char c4 = Convert.ToChar(bytesfourcc[3]);
+            return new string(new char[] { c1, c2, c3, c4 });
+        }
+
+
+        public static double GetWindowsScaling()
+        {
+            return SystemParameters.FullPrimaryScreenHeight / SystemParameters.PrimaryScreenWidth;
+            //return (int)(100 * Screen.PrimaryScreen.WorkingArea.Width / Screen.PrimaryScreen.Bounds.Width);
+        }
+
+
         void CaptureCameraCallback()
         {
-            int actualindexDevice = indexDevice;
+            int current_indexDevice = indexDevice;
             frame = new Mat();
             capture = new OpenCvSharp.VideoCapture(indexDevice);
 
             capture.Open(indexDevice, VideoCaptureAPIs.DSHOW);
 
-            int w = format.w;
-            int h = format.h;
-            float fps = format.fr;
-            string current_fourcc = format.format;
+            //int w = format.w;
+            //int h = format.h;
+            //float fps = format.fr;
+            //string current_fourcc = format.format;
 
-            capture.Set(VideoCaptureProperties.FrameWidth, w);
-            capture.Set(VideoCaptureProperties.FrameHeight, h);
-            capture.Set(VideoCaptureProperties.Fps, fps);
-            capture.Set(VideoCaptureProperties.FourCC, OpenCvSharp.FourCC.FromString(current_fourcc));
+            //capture.Set(VideoCaptureProperties.FrameWidth, w);
+            //capture.Set(VideoCaptureProperties.FrameHeight, h);
+            //capture.Set(VideoCaptureProperties.Fps, fps);
+            //capture.Set(VideoCaptureProperties.FourCC, FourCC.FromString(current_fourcc));
 
+            capture.Set(VideoCaptureProperties.FrameWidth, format.w);
+            capture.Set(VideoCaptureProperties.FrameHeight, format.h);
+            capture.Set(VideoCaptureProperties.Fps, format.fr);
+            capture.Set(VideoCaptureProperties.FourCC, FourCC.FromString(format.format));
             //newFormat = false;
 
             if (capture.IsOpened())
             {
                 while (isRunning)
                 {
-                    if (indexDevice != actualindexDevice)
-                    {
+
+
+                    if (indexDevice != current_indexDevice)
+                    {  
+                        capture = new OpenCvSharp.VideoCapture(indexDevice);
                         capture.Open(indexDevice, VideoCaptureAPIs.DSHOW);
-                        actualindexDevice = indexDevice;
+                        current_indexDevice = indexDevice;
+                        newFormat = true;
                     }
 
                     if (newFormat)
                     {
-                        w = (int)capture.Get(VideoCaptureProperties.FrameWidth);
-                        h = (int)capture.Get(VideoCaptureProperties.FrameHeight);
-                        fps = (float)capture.Get(VideoCaptureProperties.Fps);
+                        //w = (int)capture.Get(VideoCaptureProperties.FrameWidth);
+                        //h = (int)capture.Get(VideoCaptureProperties.FrameHeight);
+                        //fps = (float)capture.Get(VideoCaptureProperties.Fps);
 
-                        int intfourcc = (int)capture.Get(VideoCaptureProperties.FourCC);
-
-                        byte[] bytesfourcc = BitConverter.GetBytes(intfourcc);
-                        char c1 = Convert.ToChar(bytesfourcc[0]);
-                        char c2 = Convert.ToChar(bytesfourcc[1]);
-                        char c3 = Convert.ToChar(bytesfourcc[2]);
-                        char c4 = Convert.ToChar(bytesfourcc[3]);
-                        current_fourcc = new string(new char[] { c1, c2, c3, c4 });
-
+                       // current_fourcc = Get_current_fourcc();
 
                         capture.Set(VideoCaptureProperties.FrameWidth, format.w);
                         capture.Set(VideoCaptureProperties.FrameHeight, format.h);
                         capture.Set(VideoCaptureProperties.Fps, format.fr);
+                        capture.Set(VideoCaptureProperties.FourCC, FourCC.FromString(format.format));
 
-                        int remainingtest = 5;
-                        while (current_fourcc != format.format && remainingtest > 0)
-                        {
-                            remainingtest--;
 
-                            capture.Dispose();
-                            capture = new OpenCvSharp.VideoCapture(indexDevice);
-                            capture.Open(indexDevice, VideoCaptureAPIs.DSHOW);
-                            capture.Set(VideoCaptureProperties.FrameWidth, format.w);
-                            capture.Set(VideoCaptureProperties.FrameHeight, format.h);
-                            capture.Set(VideoCaptureProperties.Fps, format.fr);
-                            capture.Set(VideoCaptureProperties.FourCC, OpenCvSharp.FourCC.FromString(format.format));
+                        //for (int i = 0; i < 5; i++)
+                        //{
+                        //    capture.Read(frame);
+                        //    if (frame.Empty())
+                        //        Thread.Sleep(100);
+                        //    else
+                        //        Show(frame);
+                        //}
 
-                            intfourcc = (int)capture.Get(VideoCaptureProperties.FourCC);
-                            bytesfourcc = BitConverter.GetBytes(intfourcc);
-                            c1 = Convert.ToChar(bytesfourcc[0]);
-                            c2 = Convert.ToChar(bytesfourcc[1]);
-                            c3 = Convert.ToChar(bytesfourcc[2]);
-                            c4 = Convert.ToChar(bytesfourcc[3]);
-                            current_fourcc = new string(new char[] { c1, c2, c3, c4 });
-                        }
+                        //int remainingtest = 5;
+                        //while (current_fourcc != format.format && remainingtest > 0)
+                        //{
+                        //    remainingtest--;
 
-                        if (remainingtest <= 0)
-                        {
-                            MessageBox.Show("Fail to switch to " + format.format + " format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        }
+                        //    //capture.Dispose();
+                        //    //capture = new OpenCvSharp.VideoCapture(indexDevice);
+                        //    //capture.Open(indexDevice, VideoCaptureAPIs.DSHOW);
+
+                        //    //capture.Set(VideoCaptureProperties.FrameWidth, format.w);
+                        //    //capture.Set(VideoCaptureProperties.FrameHeight, format.h);
+                        //    //capture.Set(VideoCaptureProperties.Fps, format.fr);
+
+                        //    //capture.Set(VideoCaptureProperties.FourCC, FourCC.FromString(format.format));
+
+                        //    //current_fourcc = Get_current_fourcc();
+                        //    //if (current_fourcc != format.format)
+                        //    //    Thread.Sleep(100);
+                        //}
+
+                        //if (remainingtest <= 0)
+                        //{
+                        //    MessageBox.Show("Fail to switch to " + format.format + " format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        //}
+
+                        //for (int i = 0; i < 5; i++)
+                        //{
+                        //    capture.Read(frame);
+                        //    if (frame.Empty())
+                        //        Thread.Sleep(100);
+                        //    else
+                        //        Show(frame);
+                        //}
 
                         frame_ratio = (double)format.w / format.h;
                         actualWidth = format.w;
                         Application.Current.Dispatcher.Invoke(() => { Width = actualWidth; });
+
                         newFormat = false;
                     }
 
@@ -500,6 +557,8 @@ namespace VideoCapture
 
                         Show(frame);
                     }
+                    title = GetWindowsScaling().ToString();
+
                 }
             }
             capture.Dispose();
@@ -721,5 +780,9 @@ namespace VideoCapture
         }
         #endregion
 
+        private void TEST_Click(object sender, MouseButtonEventArgs e)
+        {
+            newFormat = true;
+        }
     }
 }
