@@ -11,6 +11,9 @@ using System.Windows.Media.Imaging;
 using System.ComponentModel;
 using System.IO;
 
+// Disable Dpi awareness in the application assembly.
+//[assembly: System.Windows.Media.DisableDpiAwareness]
+
 namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
@@ -32,7 +35,8 @@ namespace VideoCapture
         RotateFlags? rotation;
 
         // Filtres
-        Dictionary<string, MenuItem> filtres;
+        public List<Filtre> filtres;
+        Dictionary<string, MenuItem> _filtres;
         string dossierFiltres = AppDomain.CurrentDomain.BaseDirectory + "filters";
 
         // CAMERA
@@ -57,6 +61,7 @@ namespace VideoCapture
 
         bool _HideMenu;
         bool forceResize;
+        double WindowsScreenScale;
 
         #region VARIABLES BINDINGS
         public event PropertyChangedEventHandler PropertyChanged;
@@ -381,16 +386,17 @@ namespace VideoCapture
             ManageFilter("");
             FullScreenManagement();
             MouseEnterEventDelay_Init();
+            Get_WindowsScreenScale();
             _HideWindowBar = true;
         }
 
         #region SCREENSHOT
-        private void Screenshot_Click(object sender, MouseButtonEventArgs e)
+        void Screenshot_Click(object sender, MouseButtonEventArgs e)
         {
             Screenshot();
         }
 
-        private void Window_KeyDown(object sender, KeyEventArgs e)
+        void Window_KeyDown(object sender, KeyEventArgs e)
         {
             switch (e.Key)
             {
@@ -400,11 +406,23 @@ namespace VideoCapture
             }
         }
 
-        private void Screenshot()
+        void Screenshot()
         {
             if (ScreenshotFolder != null && System.IO.Directory.Exists(ScreenshotFolder))
                 if (frame != null && !frame.Empty())
                 {
+
+
+
+
+                    if (ckb_savewithfilter.IsChecked == true)
+                    {
+                        throw new Exception("TODO");
+                    }
+
+
+
+
                     string extension = ".jpg";
                     string filename = ScreenshotFolder + DateTime.Now.ToString("yyyy_MM_dd - HH_mm_ss.fff") + extension;
                     frame.SaveImage(filename);
@@ -412,12 +430,22 @@ namespace VideoCapture
                 }
         }
 
-        private void ScreenshotFolder_Click(object sender, MouseButtonEventArgs e)
+        void ScreenshotFolder_Click(object sender, MouseButtonEventArgs e)
         {
-            Set_ScreenshotFolder();
+            if (e.RightButton == MouseButtonState.Pressed)
+                Open_ScreenshotFolder();
+
+            if (e.LeftButton == MouseButtonState.Pressed)
+                Set_ScreenshotFolder();
         }
 
-        private void Set_ScreenshotFolder()
+        void Open_ScreenshotFolder()
+        {
+            if (Directory.Exists(ScreenshotFolder))
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", ScreenshotFolder));
+        }
+
+        void Set_ScreenshotFolder()
         {
             using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
             {
@@ -477,6 +505,9 @@ namespace VideoCapture
 
         private void Combobox_CaptureDeviceFormat_Change(object sender, SelectionChangedEventArgs e)
         {
+            if (cbx_deviceFormat.SelectedValue == null)
+                return;
+
             format = formats[cbx_deviceFormat.SelectedValue as string];
             formatName = cbx_deviceFormat.Items[cbx_deviceFormat.SelectedIndex].ToString();
             OnPropertyChanged("_title");
@@ -761,9 +792,16 @@ namespace VideoCapture
         #endregion
 
         #region FILTERS \ Calque par dessus image
+
+        private void ctxm_filtreManager_Click(object sender, RoutedEventArgs e)
+        {
+            Filtre_Manager filtre_manager = new Filtre_Manager();
+            filtre_manager._Link(this);
+        }
+
         void UpdateFilers()
         {
-            filtres = new Dictionary<string, MenuItem>();
+            _filtres = new Dictionary<string, MenuItem>();
             ctxm_calque.Items.Clear();
 
             // "Pick Filter"
@@ -790,7 +828,7 @@ namespace VideoCapture
             mi_none.Click += Mi_none_Click;
             ctxm_calque.Items.Add(mi_none);
             mi_none.IsChecked = false;
-            filtres.Add("", mi_none);
+            _filtres.Add("", mi_none);
 
             // "Filters"
             DirectoryInfo di = new DirectoryInfo(dossierFiltres);
@@ -814,7 +852,7 @@ namespace VideoCapture
                 mi.IsChecked = false;
                 mi.Click += Mi_filter_Click;
                 ctxm_calque.Items.Add(mi);
-                filtres.Add(fi.Name, mi);
+                _filtres.Add(fi.Name, mi);
             }
         }
 
@@ -879,20 +917,40 @@ namespace VideoCapture
             else
                 imagecalque.Source = new BitmapImage(new Uri(AppDomain.CurrentDomain.BaseDirectory + "filters\\" + filtername));
 
-            foreach (var item in filtres)
+            foreach (var item in _filtres)
                 item.Value.IsChecked = (item.Key == filtername);
         }
         #endregion
 
+        #region DPI
 
 
+        [System.Runtime.InteropServices.DllImport("gdi32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto, SetLastError = true, ExactSpelling = true)]
+        public static extern int GetDeviceCaps(IntPtr hDC, int nIndex);
 
+        public enum DeviceCap
+        {
+            /// <summary>
+            /// Logical pixels inch in X
+            /// </summary>
+            LOGPIXELSX = 88,
+            /// <summary>
+            /// Logical pixels inch in Y
+            /// </summary>
+            LOGPIXELSY = 90
 
+            // Other constants may be founded on pinvoke.net
+        }
 
-
-
-
-
+        void Get_WindowsScreenScale()
+        {
+            Graphics g = Graphics.FromHwnd(IntPtr.Zero);
+            IntPtr desktop = g.GetHdc();
+            int Xdpi = GetDeviceCaps(desktop, (int)DeviceCap.LOGPIXELSX);
+            int Ydpi = GetDeviceCaps(desktop, (int)DeviceCap.LOGPIXELSY);
+            WindowsScreenScale = (double)Xdpi / 96;
+        }
+        #endregion
 
         #region CAMERA SETTINGS
 
@@ -1020,6 +1078,31 @@ namespace VideoCapture
             }
 
             return (DirectShowLib.IBaseFilter)source;
+        }
+        #endregion
+
+        #region SAVE/LOAD
+        private void Save_Click(object sender, MouseButtonEventArgs e)
+        {
+            CameraConfiguration cc = new CameraConfiguration(deviceName, cbx_deviceFormat.SelectedValue as string, (int)Width, (int)Height);
+            string txt = cc.ToString();
+            Properties.Settings.Default.config = txt;
+            Properties.Settings.Default.Save();
+        }
+
+        private void Load_Click(object sender, MouseButtonEventArgs e)
+        {
+            string txt = Properties.Settings.Default.config;
+            CameraConfiguration cc = new CameraConfiguration(txt);
+
+            cbx_device.SelectedValue = cc.deviceName;
+            Thread.Sleep(100);
+            cbx_deviceFormat.SelectedValue = cc.format;
+            Thread.Sleep(100);
+            forceResize = true;
+            Width = cc.width;
+            Thread.Sleep(100);
+            Height = cc.height;
         }
         #endregion
     }

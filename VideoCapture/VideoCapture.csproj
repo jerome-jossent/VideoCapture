@@ -55,6 +55,7 @@
   <PropertyGroup>
     <ApplicationIcon>camera.ico</ApplicationIcon>
   </PropertyGroup>
+  <PropertyGroup />
   <ItemGroup>
     <Reference Include="DirectShowLib, Version=2.1.0.1599, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\DirectShowLib.1.0.0\lib\DirectShowLib.dll</HintPath>
@@ -128,8 +129,24 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CameraConfiguration.cs" />
+    <Compile Include="Filtre.cs" />
+    <Compile Include="Filtre_IMAGE.cs" />
+    <Compile Include="Filtre_Manager.xaml.cs">
+      <DependentUpon>Filtre_Manager.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Filtre_TXT.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="VideoInInfo.cs" />
     <Compile Include="VisibilityConverter.cs" />
+    <Page Include="Filtre_Manager.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -148,11 +165,6 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -186,17 +198,7 @@
     <Resource Include="camera.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\5129-tOo-Dossierouvert.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\camera.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\kmultiple.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>
@@ -207,11 +209,6 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\Pause.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\pin.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>
@@ -270,6 +267,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="DirectShowLib-2005.dll" />
+    <Resource Include="Resources\load.png" />
+    <Resource Include="Resources\save.png" />
+    <Resource Include="Resources\interrogation.png" />
+    <Resource Include="Resources\camera+file.png" />
+    <Resource Include="Resources\alwaysontop.png" />
     <Resource Include="Resources\camera_settings.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
