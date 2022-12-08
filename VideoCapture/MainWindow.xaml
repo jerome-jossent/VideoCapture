@@ -267,7 +267,7 @@
                 <Image Source="/Resources/Folder.png" MouseDown="ScreenshotFolder_Click" ToolTip="{Binding ScreenshotFolder}" RenderOptions.BitmapScalingMode="Fant"/>
                 <Image Source="/Resources/camera.png" MouseDown="Screenshot_Click" ToolTip="Take picture (also work with space bar)" RenderOptions.BitmapScalingMode="Fant"/>
                 <Label Content="{Binding ScreenshotCount}" VerticalAlignment="Center"/>
-                <CheckBox IsEnabled="False" x:Name="ckb_savewithfilter" Content="+ filter" VerticalAlignment="Center"/>
+                <CheckBox x:Name="ckb_savewithfilter" Content="+ filter" VerticalAlignment="Center"/>
             </StackPanel>
 
             <!--MENU DROIT-->

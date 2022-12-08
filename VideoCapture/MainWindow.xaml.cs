@@ -38,6 +38,10 @@ namespace VideoCapture
         public List<Filtre> filtres;
         Dictionary<string, MenuItem> _filtres;
         string dossierFiltres = AppDomain.CurrentDomain.BaseDirectory + "Filters";
+        string filtername;
+
+        Mat filterframe;
+        Mat frame_augmentation;
 
         // CAMERA
         Thread thread;
@@ -72,7 +76,7 @@ namespace VideoCapture
 
         public string _title
         {
-            get { return "VideoCapture " + version + " - " + deviceName + " - " + formatName + " " + fps + " " + GetWindowsScaling().ToString("%"); }
+            get { return "VideoCapture " + version + " - " + deviceName + " - " + formatName + " " + fps; }
         }
 
         public string _fps
@@ -389,8 +393,9 @@ namespace VideoCapture
             ManageFilter("");
             FullScreenManagement();
             MouseEnterEventDelay_Init();
-            Get_WindowsScreenScale();
             WindowBarManagement();
+
+            Get_WindowsScreenScale();
         }
 
         #region SCREENSHOT
@@ -418,13 +423,23 @@ namespace VideoCapture
             if (ScreenshotFolder != null && System.IO.Directory.Exists(ScreenshotFolder))
                 if (frame != null && !frame.Empty())
                 {
-                    if (ckb_savewithfilter.IsChecked == true)
+                    Mat screenshot = null;
+                    if (ckb_savewithfilter.IsChecked == true && !filterframe.Empty())
                     {
+
                         throw new Exception("TODO");
+                        //frame
+                        //filterframe
+
+                        //screenshot
+                    }
+                    else
+                    {
+                        screenshot = frame.Clone();
                     }
                     string extension = ".jpg";
                     string filename = ScreenshotFolder + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss.fff") + extension;
-                    frame.SaveImage(filename);
+                    screenshot.SaveImage(filename);
                     screenshotCount++;
                     screenshotFile_Last = filename;
                 }
@@ -558,14 +573,6 @@ namespace VideoCapture
             char c4 = Convert.ToChar(bytesfourcc[3]);
             return new string(new char[] { c1, c2, c3, c4 });
         }
-
-
-        public static double GetWindowsScaling()
-        {
-            return SystemParameters.FullPrimaryScreenHeight / SystemParameters.PrimaryScreenWidth;
-            //return (int)(100 * Screen.PrimaryScreen.WorkingArea.Width / Screen.PrimaryScreen.Bounds.Width);
-        }
-
 
         void CaptureCameraCallback()
         {
@@ -919,10 +926,22 @@ namespace VideoCapture
 
         void ManageFilter(string filtername)
         {
+            this.filtername = filtername;
             if (filtername == "")
+            {
+                filterframe = new Mat();
                 imagecalque.Source = null;
+            }
             else
-                imagecalque.Source = new BitmapImage(new Uri(AppDomain.CurrentDomain.BaseDirectory + "filters\\" + filtername));
+            {
+                //imagecalque.Source = new BitmapImage(new Uri(AppDomain.CurrentDomain.BaseDirectory + "filters\\" + filtername));
+
+
+                //par mat : (EN DEV)
+                filterframe = Cv2.ImRead(AppDomain.CurrentDomain.BaseDirectory + "filters\\" + filtername, ImreadModes.LoadGdal);//, ImreadModes.AnyColor);
+
+                imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe));
+            }
 
             foreach (var item in _filtres)
                 item.Value.IsChecked = (item.Key == filtername);
