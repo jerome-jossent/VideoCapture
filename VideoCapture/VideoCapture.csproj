@@ -260,7 +260,9 @@
     <Resource Include="Resources\Settings.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\folder.png" />
+    <Resource Include="Resources\folder.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\window_s_bar.png" />

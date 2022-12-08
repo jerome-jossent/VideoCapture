@@ -18,7 +18,7 @@ namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
     {
-        string version = "2022/12/05";
+        const string version = "version 2022/12/05";
 
         #region VARIABLES & PARAMETERS
         // FPS
@@ -37,7 +37,7 @@ namespace VideoCapture
         // Filtres
         public List<Filtre> filtres;
         Dictionary<string, MenuItem> _filtres;
-        string dossierFiltres = AppDomain.CurrentDomain.BaseDirectory + "filters";
+        string dossierFiltres = AppDomain.CurrentDomain.BaseDirectory + "Filters";
 
         // CAMERA
         Thread thread;
@@ -59,7 +59,6 @@ namespace VideoCapture
         DirectShowLib.DsDevice[] devices;
         DirectShowLib.DsDevice current_device;
 
-        bool _HideMenu;
         bool forceResize;
         double WindowsScreenScale;
 
@@ -73,14 +72,8 @@ namespace VideoCapture
 
         public string _title
         {
-            get { return deviceName + " " + formatName + fps; }
-            set
-            {
-                title = value;
-                OnPropertyChanged("_title");
-            }
+            get { return "VideoCapture " + version + " - " + deviceName + " - " + formatName + " " + fps + " " + GetWindowsScaling().ToString("%"); }
         }
-        string title;
 
         public string _fps
         {
@@ -122,12 +115,28 @@ namespace VideoCapture
             set
             {
                 HideWindowBar = value;
-                ctxm_hideothers.IsChecked = _HideWindowBar;
                 OnPropertyChanged("_HideWindowBar");
                 WindowBarManagement();
+
+                Properties.Settings.Default.HideWindowBar = _HideWindowBar;
+                Properties.Settings.Default.Save();
             }
         }
-        bool HideWindowBar;
+        bool HideWindowBar = Properties.Settings.Default.HideWindowBar;
+
+        public bool _HideMenu
+        {
+            get { return HideMenu; }
+            set
+            {
+                HideMenu = value;
+                OnPropertyChanged("_HideMenu");
+
+                Properties.Settings.Default.HideMenu = _HideMenu;
+                Properties.Settings.Default.Save();
+            }
+        }
+        bool HideMenu = Properties.Settings.Default.HideMenu;
 
 
         public bool _fullScreen
@@ -192,12 +201,16 @@ namespace VideoCapture
             }
             set
             {
-                Properties.Settings.Default.ScreenshotFolder = value;
+                string rep = value;
+                if (rep.Substring(rep.Length - 2) != "\\")
+                    rep += "\\";
+
+                Properties.Settings.Default.ScreenshotFolder = rep;
                 Properties.Settings.Default.Save();
                 OnPropertyChanged("ScreenshotFolder");
             }
         }
-
+        string screenshotFile_Last = "";
 
         public string ScreenshotCount
         {
@@ -256,11 +269,8 @@ namespace VideoCapture
 
         void img_mousedown(object sender, MouseButtonEventArgs e)
         {
-            if (ctxm_hideothers.IsChecked)
-            {
-                if (e.ChangedButton == MouseButton.Left)
-                    this.DragMove();
-            }
+            if (e.ChangedButton == MouseButton.Left)
+                this.DragMove();
         }
 
         void MouseEnterEventDelay_Init()
@@ -346,15 +356,8 @@ namespace VideoCapture
             }
         }
 
-        private void ctxm_hideothers_Click(object sender, RoutedEventArgs e)
-        {
-            _HideWindowBar = !_HideWindowBar;
-            ctxm_hideothers.IsChecked = _HideWindowBar;
-        }
-
         private void ctxm_overlaidMenu_Click(object sender, RoutedEventArgs e)
         {
-            _HideMenu = !_HideMenu;
             if (_HideMenu)
                 grd_visu.Visibility = Visibility.Collapsed;
         }
@@ -387,13 +390,17 @@ namespace VideoCapture
             FullScreenManagement();
             MouseEnterEventDelay_Init();
             Get_WindowsScreenScale();
-            _HideWindowBar = true;
+            WindowBarManagement();
         }
 
         #region SCREENSHOT
         void Screenshot_Click(object sender, MouseButtonEventArgs e)
         {
-            Screenshot();
+            if (e.LeftButton == MouseButtonState.Pressed)
+                Screenshot();
+
+            if (e.RightButton == MouseButtonState.Pressed)
+                Open_ScreenshotFolder();
         }
 
         void Window_KeyDown(object sender, KeyEventArgs e)
@@ -411,38 +418,36 @@ namespace VideoCapture
             if (ScreenshotFolder != null && System.IO.Directory.Exists(ScreenshotFolder))
                 if (frame != null && !frame.Empty())
                 {
-
-
-
-
                     if (ckb_savewithfilter.IsChecked == true)
                     {
                         throw new Exception("TODO");
                     }
-
-
-
-
                     string extension = ".jpg";
-                    string filename = ScreenshotFolder + DateTime.Now.ToString("yyyy_MM_dd - HH_mm_ss.fff") + extension;
+                    string filename = ScreenshotFolder + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss.fff") + extension;
                     frame.SaveImage(filename);
                     screenshotCount++;
+                    screenshotFile_Last = filename;
                 }
         }
 
         void ScreenshotFolder_Click(object sender, MouseButtonEventArgs e)
         {
-            if (e.RightButton == MouseButtonState.Pressed)
-                Open_ScreenshotFolder();
-
             if (e.LeftButton == MouseButtonState.Pressed)
                 Set_ScreenshotFolder();
+
+            if (e.RightButton == MouseButtonState.Pressed)
+                Open_ScreenshotFolder();
         }
 
         void Open_ScreenshotFolder()
         {
             if (Directory.Exists(ScreenshotFolder))
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", ScreenshotFolder));
+            {
+                if (File.Exists(screenshotFile_Last))
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", "/select, \"" + screenshotFile_Last + "\""));
+                else
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", ScreenshotFolder));
+            }
         }
 
         void Set_ScreenshotFolder()
@@ -686,8 +691,6 @@ namespace VideoCapture
 
                         Show(frame);
                     }
-                    title = GetWindowsScaling().ToString();
-
                 }
             }
             capture.Dispose();
@@ -806,7 +809,7 @@ namespace VideoCapture
 
             // "Pick Filter"
             StackPanel sp = new StackPanel() { Orientation = Orientation.Horizontal };
-            System.Windows.Controls.Image im = ImageFileToImageWPF(AppDomain.CurrentDomain.BaseDirectory + "Resources//5129-tOo-Dossierouvert.png");
+            System.Windows.Controls.Image im = ImageFileToImageWPF("pack://application:,,,/Resources/folder.png");
             im.Width = 20;
             im.Height = 20;
             System.Windows.Media.RenderOptions.SetBitmapScalingMode(im, System.Windows.Media.BitmapScalingMode.Fant);
@@ -831,29 +834,33 @@ namespace VideoCapture
             _filtres.Add("", mi_none);
 
             // "Filters"
-            DirectoryInfo di = new DirectoryInfo(dossierFiltres);
-
-            Style stackPanelStyle = this.FindResource("HorizontalStackPanel") as Style;
-
-            foreach (FileInfo fi in di.GetFiles())
+            if (Directory.Exists(dossierFiltres))
             {
-                sp = new StackPanel();
-                sp.Style = stackPanelStyle;
-                sp.Orientation = Orientation.Horizontal;
-                im = ImageFileToImageWPF(fi.FullName);
-                im.Width = 100;
-                im.Height = 100;
-                sp.Children.Add(im);
-                cp = new ContentPresenter();
-                cp.Content = fi.Name;
-                sp.Children.Add(cp);
-                MenuItem mi = new MenuItem();
-                mi.Header = sp;
-                mi.IsChecked = false;
-                mi.Click += Mi_filter_Click;
-                ctxm_calque.Items.Add(mi);
-                _filtres.Add(fi.Name, mi);
+                DirectoryInfo di = new DirectoryInfo(dossierFiltres);
+
+                Style stackPanelStyle = this.FindResource("HorizontalStackPanel") as Style;
+
+                foreach (FileInfo fi in di.GetFiles())
+                {
+                    sp = new StackPanel();
+                    sp.Style = stackPanelStyle;
+                    sp.Orientation = Orientation.Horizontal;
+                    im = ImageFileToImageWPF(fi.FullName);
+                    im.Width = 100;
+                    im.Height = 100;
+                    sp.Children.Add(im);
+                    cp = new ContentPresenter();
+                    cp.Content = fi.Name;
+                    sp.Children.Add(cp);
+                    MenuItem mi = new MenuItem();
+                    mi.Header = sp;
+                    mi.IsChecked = false;
+                    mi.Click += Mi_filter_Click;
+                    ctxm_calque.Items.Add(mi);
+                    _filtres.Add(fi.Name, mi);
+                }
             }
+
         }
 
         System.Windows.Controls.Image ImageFileToImageWPF(string fullfilename)

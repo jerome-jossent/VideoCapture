@@ -75,8 +75,8 @@
                     </MenuItem>
 
                     <Separator />
-                    <!-- Only Picture -->
-                    <MenuItem IsCheckable="True" IsChecked="False" Name="ctxm_hideothers" Click="ctxm_hideothers_Click">
+                    <!-- Hide Window's Bar -->
+                    <MenuItem IsCheckable="True" IsChecked="{Binding _HideWindowBar}">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
                                 <Image Width="20" Height="20" Source="/Resources/window_s_bar.png" RenderOptions.BitmapScalingMode="Fant"/>
@@ -86,7 +86,7 @@
                     </MenuItem>
 
                     <!-- Show/Hide Overlaid Menu -->
-                    <MenuItem IsCheckable="True" IsChecked="False" Name="ctxm_overlaidMenu" Click="ctxm_overlaidMenu_Click">
+                    <MenuItem IsCheckable="True" IsChecked="{Binding _HideMenu}" Name="ctxm_overlaidMenu" Click="ctxm_overlaidMenu_Click">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
                                 <Image Width="20" Height="20" Source="Resources/Settings.png" RenderOptions.BitmapScalingMode="Fant"/>
@@ -267,7 +267,7 @@
                 <Image Source="/Resources/Folder.png" MouseDown="ScreenshotFolder_Click" ToolTip="{Binding ScreenshotFolder}" RenderOptions.BitmapScalingMode="Fant"/>
                 <Image Source="/Resources/camera.png" MouseDown="Screenshot_Click" ToolTip="Take picture (also work with space bar)" RenderOptions.BitmapScalingMode="Fant"/>
                 <Label Content="{Binding ScreenshotCount}" VerticalAlignment="Center"/>
-                <CheckBox x:Name="ckb_savewithfilter" Content="+ filter" VerticalAlignment="Center"/>
+                <CheckBox IsEnabled="False" x:Name="ckb_savewithfilter" Content="+ filter" VerticalAlignment="Center"/>
             </StackPanel>
 
             <!--MENU DROIT-->
