@@ -12,5 +12,10 @@ namespace VideoCapture
         {
             _type = FiltreType.image;
         }
+
+        public override void UpdateTitle()
+        {
+            title = "Filtre_IMAGE";
+        }
     }
 }

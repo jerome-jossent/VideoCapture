@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VideoCapture"
         mc:Ignorable="d"
-        Title="{Binding _title}" Height="250" Width="250"
+        Title="{Binding _title}" Height="250" Width="450"
         
         MinWidth="300"
         
@@ -37,7 +37,8 @@
                RenderOptions.BitmapScalingMode="Fant"/>
 
         <!--IMAGE FILTRE-->
-        <Image x:Name="imagecalque" Stretch="Uniform" RenderOptions.BitmapScalingMode="Fant"/>
+        <Image x:Name="imagecalque" Stretch="Uniform"
+               RenderOptions.BitmapScalingMode="Fant"/>
 
         <!--(IMAGE) CONTEXTMENU-->
         <Image MouseDown="img_mousedown" Source="/Resources/_transparent 32x32.png" Stretch="UniformToFill">
@@ -268,6 +269,21 @@
                 <Image Source="/Resources/camera.png" MouseDown="Screenshot_Click" ToolTip="Take picture (also work with space bar)" RenderOptions.BitmapScalingMode="Fant"/>
                 <Label Content="{Binding ScreenshotCount}" VerticalAlignment="Center"/>
                 <CheckBox x:Name="ckb_savewithfilter" Content="+ filter" VerticalAlignment="Center"/>
+            </StackPanel>
+
+
+            <StackPanel Grid.Column="1" Margin="20,0,0,0" Grid.Row="1" Height="40" Orientation="Horizontal">
+                <StackPanel.Resources>
+                    <Style TargetType="{x:Type Image}">
+                        <Setter Property="Margin" Value="2"/>
+                    </Style>
+                    <Style TargetType="{x:Type ComboBox}">
+                        <Setter Property="Margin" Value="2"/>
+                    </Style>
+                </StackPanel.Resources>
+
+                <Image Source="/Resources/camera+file.png" MouseDown="FilterManager_Click" 
+                       ToolTip="Filter Manager" RenderOptions.BitmapScalingMode="Fant"/>
             </StackPanel>
 
             <!--MENU DROIT-->

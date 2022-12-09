@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.ComponentModel;
 using System.IO;
+using System.Collections.ObjectModel;
 
 // Disable Dpi awareness in the application assembly.
 //[assembly: System.Windows.Media.DisableDpiAwareness]
@@ -18,6 +19,10 @@ namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
     {
+        bool AUTORELOAD = true;
+        bool configLoading = false;
+        CameraConfiguration cameraConfiguration = null;
+
         const string version = "version 2022/12/05";
 
         #region VARIABLES & PARAMETERS
@@ -35,7 +40,7 @@ namespace VideoCapture
         RotateFlags? rotation;
 
         // Filtres
-        public List<Filtre> filtres;
+        public ObservableCollection<Filtre> filtres = new ObservableCollection<Filtre>();
         Dictionary<string, MenuItem> _filtres;
         string dossierFiltres = AppDomain.CurrentDomain.BaseDirectory + "Filters";
         string filtername;
@@ -65,6 +70,7 @@ namespace VideoCapture
 
         bool forceResize;
         double WindowsScreenScale;
+        Filtre_Manager filtre_manager;
 
         #region VARIABLES BINDINGS
         public event PropertyChangedEventHandler PropertyChanged;
@@ -255,8 +261,7 @@ namespace VideoCapture
 
         void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            isRunning = false;
-            CaptureCameraStop();
+            QUIT();
         }
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
@@ -382,9 +387,19 @@ namespace VideoCapture
 
         private void ctxm_quit_Click(object sender, RoutedEventArgs e)
         {
+            QUIT();
             Close();
         }
         #endregion
+
+        void QUIT()
+        {
+            isRunning = false;
+            CaptureCameraStop();
+
+            if (filtre_manager != null)
+                filtre_manager.Close();
+        }
 
         void INITS()
         {
@@ -396,6 +411,9 @@ namespace VideoCapture
             WindowBarManagement();
 
             Get_WindowsScreenScale();
+
+            if (AUTORELOAD)
+                Config_Load();
         }
 
         #region SCREENSHOT
@@ -581,25 +599,30 @@ namespace VideoCapture
             capture = new OpenCvSharp.VideoCapture(indexDevice);
 
             capture.Open(indexDevice, VideoCaptureAPIs.DSHOW);
-
-            //int w = format.w;
-            //int h = format.h;
-            //float fps = format.fr;
-            //string current_fourcc = format.format;
-
-            //capture.Set(VideoCaptureProperties.FrameWidth, w);
-            //capture.Set(VideoCaptureProperties.FrameHeight, h);
-            //capture.Set(VideoCaptureProperties.Fps, fps);
-            //capture.Set(VideoCaptureProperties.FourCC, FourCC.FromString(current_fourcc));
-
             capture.Set(VideoCaptureProperties.FrameWidth, format.w);
             capture.Set(VideoCaptureProperties.FrameHeight, format.h);
             capture.Set(VideoCaptureProperties.Fps, format.fr);
             capture.Set(VideoCaptureProperties.FourCC, FourCC.FromString(format.format));
-            //newFormat = false;
 
             if (capture.IsOpened())
             {
+                if (configLoading && cameraConfiguration != null)
+                {
+                    while (frame.Empty())
+                    {
+                        Thread.Sleep(10);
+                        capture.Read(frame);
+                    }
+                    newFormat = false;
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        forceResize = true;
+                        Width = cameraConfiguration.width;
+                        Height = cameraConfiguration.height;
+                        configLoading = false;
+                    });
+                }
+
                 while (isRunning)
                 {
                     if (indexDevice != current_indexDevice)
@@ -612,60 +635,10 @@ namespace VideoCapture
 
                     if (newFormat)
                     {
-                        //w = (int)capture.Get(VideoCaptureProperties.FrameWidth);
-                        //h = (int)capture.Get(VideoCaptureProperties.FrameHeight);
-                        //fps = (float)capture.Get(VideoCaptureProperties.Fps);
-
-                        // current_fourcc = Get_current_fourcc();
-
                         capture.Set(VideoCaptureProperties.FrameWidth, format.w);
                         capture.Set(VideoCaptureProperties.FrameHeight, format.h);
                         capture.Set(VideoCaptureProperties.Fps, format.fr);
                         capture.Set(VideoCaptureProperties.FourCC, FourCC.FromString(format.format));
-
-
-                        //for (int i = 0; i < 5; i++)
-                        //{
-                        //    capture.Read(frame);
-                        //    if (frame.Empty())
-                        //        Thread.Sleep(100);
-                        //    else
-                        //        Show(frame);
-                        //}
-
-                        //int remainingtest = 5;
-                        //while (current_fourcc != format.format && remainingtest > 0)
-                        //{
-                        //    remainingtest--;
-
-                        //    //capture.Dispose();
-                        //    //capture = new OpenCvSharp.VideoCapture(indexDevice);
-                        //    //capture.Open(indexDevice, VideoCaptureAPIs.DSHOW);
-
-                        //    //capture.Set(VideoCaptureProperties.FrameWidth, format.w);
-                        //    //capture.Set(VideoCaptureProperties.FrameHeight, format.h);
-                        //    //capture.Set(VideoCaptureProperties.Fps, format.fr);
-
-                        //    //capture.Set(VideoCaptureProperties.FourCC, FourCC.FromString(format.format));
-
-                        //    //current_fourcc = Get_current_fourcc();
-                        //    //if (current_fourcc != format.format)
-                        //    //    Thread.Sleep(100);
-                        //}
-
-                        //if (remainingtest <= 0)
-                        //{
-                        //    MessageBox.Show("Fail to switch to " + format.format + " format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        //}
-
-                        //for (int i = 0; i < 5; i++)
-                        //{
-                        //    capture.Read(frame);
-                        //    if (frame.Empty())
-                        //        Thread.Sleep(100);
-                        //    else
-                        //        Show(frame);
-                        //}
 
                         frame_ratio = (double)format.w / format.h;
                         actualWidth = format.w;
@@ -805,8 +778,8 @@ namespace VideoCapture
 
         private void ctxm_filtreManager_Click(object sender, RoutedEventArgs e)
         {
-            Filtre_Manager filtre_manager = new Filtre_Manager();
-            filtre_manager._Link(this);
+            //Filtre_Manager filtre_manager = new Filtre_Manager();
+            //filtre_manager._Link(this);
         }
 
         void UpdateFilers()
@@ -846,7 +819,6 @@ namespace VideoCapture
                 DirectoryInfo di = new DirectoryInfo(dossierFiltres);
 
                 Style stackPanelStyle = this.FindResource("HorizontalStackPanel") as Style;
-
                 foreach (FileInfo fi in di.GetFiles())
                 {
                     sp = new StackPanel();
@@ -945,6 +917,46 @@ namespace VideoCapture
 
             foreach (var item in _filtres)
                 item.Value.IsChecked = (item.Key == filtername);
+        }
+
+
+        //NEW GENERATION
+        private void FilterManager_Click(object sender, MouseButtonEventArgs e)
+        {
+            filtre_manager = new Filtre_Manager();
+            filtre_manager._Link(this);
+            filtre_manager.Show();
+        }
+
+        public void Filter_Update()
+        {
+            filterframe = new Mat(frame.Size(), MatType.CV_8UC4);
+            foreach (Filtre f in filtres)
+            {
+                OpenCvSharp.Point p = new OpenCvSharp.Point(f.X * filterframe.Width, f.Y * filterframe.Height);
+
+                switch (f._type)
+                {
+                    case Filtre.FiltreType.texte:
+                        Filtre_TXT ft = (Filtre_TXT)f;
+                        Scalar color = new Scalar(ft.color.B, ft.color.G, ft.color.R, ft.color.A);
+                        Cv2.PutText(filterframe, ft.txt, p, HersheyFonts.HersheyPlain, 1, color, thickness: 1, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                        break;
+
+                    case Filtre.FiltreType.image:
+
+                        break;
+                }
+            }
+
+            //Cv2.NamedWindow("bob");
+            //Cv2.ImShow("bob", frame);
+            //Cv2.NamedWindow("bib");
+            //Cv2.ImShow("bib", filterframe);
+            //filterframe.SaveImage("d:\\test.png");
+            imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe));
+
+            //_imageCalque = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe);
         }
         #endregion
 
@@ -1108,7 +1120,10 @@ namespace VideoCapture
         #endregion
 
         #region SAVE/LOAD
-        private void Save_Click(object sender, MouseButtonEventArgs e)
+        private void Save_Click(object sender, MouseButtonEventArgs e) { Config_Save(); }
+        private void Load_Click(object sender, MouseButtonEventArgs e) { Config_Load(); }
+
+        void Config_Save()
         {
             CameraConfiguration cc = new CameraConfiguration(deviceName, cbx_deviceFormat.SelectedValue as string, (int)Width, (int)Height);
             string txt = cc.ToString();
@@ -1116,20 +1131,17 @@ namespace VideoCapture
             Properties.Settings.Default.Save();
         }
 
-        private void Load_Click(object sender, MouseButtonEventArgs e)
+        void Config_Load()
         {
             string txt = Properties.Settings.Default.config;
-            CameraConfiguration cc = new CameraConfiguration(txt);
+            cameraConfiguration = new CameraConfiguration(txt);
 
-            cbx_device.SelectedValue = cc.deviceName;
+            cbx_device.SelectedValue = cameraConfiguration.deviceName;
             Thread.Sleep(100);
-            cbx_deviceFormat.SelectedValue = cc.format;
-            Thread.Sleep(100);
-            forceResize = true;
-            Width = cc.width;
-            Thread.Sleep(100);
-            Height = cc.height;
+            cbx_deviceFormat.SelectedValue = cameraConfiguration.format;
+            configLoading = true;
         }
         #endregion
+
     }
 }
