@@ -939,8 +939,8 @@ namespace VideoCapture
                 {
                     case Filtre.FiltreType.texte:
                         Filtre_TXT ft = (Filtre_TXT)f;
-                        Scalar color = new Scalar(ft.color.B, ft.color.G, ft.color.R, ft.color.A);
-                        Cv2.PutText(filterframe, ft.txt, p, HersheyFonts.HersheyPlain, 1, color, thickness: 1, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                        Scalar ftcolor = new Scalar(ft.color.B, ft.color.G, ft.color.R, ft.color.A);
+                        Cv2.PutText(filterframe, ft.txt, p, ft.font, ft.FontScale, ftcolor, thickness: 1, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
                         break;
 
                     case Filtre.FiltreType.image:

@@ -3,9 +3,23 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:VideoCapture" xmlns:Standard_UC_JJO="clr-namespace:Standard_UC_JJO;assembly=Standard_UC_JJO"
+        xmlns:local="clr-namespace:VideoCapture" 
+        xmlns:Standard_UC_JJO="clr-namespace:Standard_UC_JJO;assembly=Standard_UC_JJO"
         mc:Ignorable="d"
-        Title="Filtre_Manager" Height="450" Width="800">
+        Title="Filtre_Manager" Height="450" Width="800"
+        xmlns:OpenCvSharp="clr-namespace:OpenCvSharp;assembly=OpenCvSharp"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        >
+
+    <Window.Resources>
+        <ObjectDataProvider x:Key="dataFromEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="OpenCvSharp:HersheyFonts"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+    </Window.Resources>
+    
+    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
@@ -50,6 +64,11 @@
                         <RowDefinition Height="auto"/>
                         <RowDefinition Height="auto"/>
                         <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
                     </Grid.RowDefinitions>
 
                     <Label Grid.Column="0" Grid.Row="0" Content="Alpha" Background="{Binding currentFilter.color, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
@@ -57,12 +76,15 @@
                     <Label Grid.Column="0" Grid.Row="2" Content="Position Y"/>
                     <Label Grid.Column="0" Grid.Row="3" Content="Width"/>
                     <Label Grid.Column="0" Grid.Row="4" Content="Height"/>
+                    <Label Grid.Column="0" Grid.Row="6" Content="Font"/>
+                    <Label Grid.Column="0" Grid.Row="7" Content="Font Scale"/>
 
                     <Slider Grid.Column="1" Grid.Row="0" x:Name="sld_A" Minimum="0" Maximum="1" TickFrequency="0.01" Value="{Binding currentFilter.Alpha}"/>
                     <Slider Grid.Column="1" Grid.Row="1" x:Name="sld_X" Minimum="0" Maximum="1" TickFrequency="0.01" Value="{Binding currentFilter.X}"/>
                     <Slider Grid.Column="1" Grid.Row="2" x:Name="sld_Y" Minimum="0" Maximum="1" TickFrequency="0.01" Value="{Binding currentFilter.Y}"/>
                     <Slider Grid.Column="1" Grid.Row="3" x:Name="sld_W" Minimum="0" Maximum="1" TickFrequency="0.01" Value="{Binding currentFilter.W}"/>
                     <Slider Grid.Column="1" Grid.Row="4" x:Name="sld_H" Minimum="0" Maximum="1" TickFrequency="0.01" Value="{Binding currentFilter.H}"/>
+                    <Slider Grid.Column="1" Grid.Row="7" x:Name="sld_fontscale" Minimum="0.1" Maximum="10" TickFrequency="0.01" Value="{Binding currentFilter.FontScale}"/>
 
                     <Label Grid.Column="2" Grid.Row="0" Content="{Binding currentFilter.Alpha}"/>
                     <Label Grid.Column="2" Grid.Row="1" Content="{Binding currentFilter.X}"/>
@@ -71,6 +93,8 @@
                     <Label Grid.Column="2" Grid.Row="4" Content="{Binding currentFilter.H}"/>
 
                     <TextBox Grid.Row="5" Grid.ColumnSpan="3" Text="{Binding currentFilter.txt, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                    <ComboBox Grid.Column="1" Grid.Row="6"  Grid.ColumnSpan="2" ItemsSource="{Binding Source={StaticResource dataFromEnum}}" SelectedItem="{Binding Path=currentFilter.font}" />
+                    <Label Grid.Column="2" Grid.Row="7" Content="{Binding currentFilter.FontScale}"/>
                 </Grid>
             </StackPanel>
 

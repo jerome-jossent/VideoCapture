@@ -21,6 +21,29 @@ namespace VideoCapture
         }
         string _txt;
 
+        public OpenCvSharp.HersheyFonts font
+        {
+            get { return _font; }
+            set
+            {
+                _font = value;
+                OnPropertyChanged("font");
+            }
+        }
+        OpenCvSharp.HersheyFonts _font = OpenCvSharp.HersheyFonts.HersheyPlain;
+
+
+        public double FontScale
+        {
+            get { return fontScale; }
+            set
+            {
+                fontScale = value;
+                OnPropertyChanged("FontScale");
+            }
+        }
+        double fontScale = 1;
+
         public double Alpha
         {
             get { return alpha; }

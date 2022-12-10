@@ -59,6 +59,8 @@ namespace VideoCapture
             InitializeComponent();
             DataContext = this;
             colorPicker._ColorNew += ColorPicker__ColorNew;
+
+            //cbx_font.ItemsSource = Enum.GetValues(typeof(OpenCvSharp.HersheyFonts)).Cast<OpenCvSharp.HersheyFonts>();
         }
 
         private void _ListFilters_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -104,6 +106,8 @@ namespace VideoCapture
             Filtre_TXT f = new Filtre_TXT("Your text here");
             _ListFilters.Add(f);
             currentFilter = f;
+
+            mainWindow.Filter_Update();
         }
 
         private void btn_filtre_moins_Click(object sender, MouseButtonEventArgs e)
@@ -112,12 +116,25 @@ namespace VideoCapture
             {
                 int index = _ListFilters.IndexOf(currentFilter);
                 _ListFilters.Remove(currentFilter);
+                mainWindow.Filter_Update();
                 if (_ListFilters.Count > 0)
-                    if (_ListFilters.Count - 1 >= index)
-                        currentFilter = _ListFilters[index];
-                    else
-                        currentFilter = _ListFilters[index - 1];
+                    currentFilter = (_ListFilters.Count - 1 >= index) ? _ListFilters[index] : _ListFilters[index - 1];
             }
         }
+
+        //private void cbx_font_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        //{
+        //    if (currentFilter == null) return;
+        //    if (currentFilter._type == Filtre.FiltreType.texte)
+        //    {
+        //        Filtre_TXT ft = (Filtre_TXT)currentFilter;
+
+        //        ft.font = (OpenCvSharp.HersheyFonts)cbx_font.SelectedItem;
+        //    }
+        //}
+
+
+
+
     }
 }
