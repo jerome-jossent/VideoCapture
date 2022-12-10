@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -10,6 +11,10 @@ namespace VideoCapture
     public abstract class Filtre : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
+        [JsonIgnore]
+        public bool isImage;
+        [JsonIgnore]
+        public bool isTxt;
 
         protected void OnPropertyChanged(string name = null)
         {
@@ -18,6 +23,7 @@ namespace VideoCapture
 
         public abstract void UpdateTitle();
 
+        [JsonIgnore]
         public string title
         {
             get { return _title; }

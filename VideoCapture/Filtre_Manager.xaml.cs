@@ -14,6 +14,7 @@ using System.Windows.Shapes;
 
 using System.ComponentModel;
 using System.Collections.ObjectModel;
+using Newtonsoft.Json;
 
 namespace VideoCapture
 {
@@ -98,7 +99,11 @@ namespace VideoCapture
 
         void btn_add_image_click(object sender, RoutedEventArgs e)
         {
+            Filtre_IMAGE f = new Filtre_IMAGE();
+            _ListFilters.Add(f);
+            currentFilter = f;
 
+            mainWindow.Filter_Update();
         }
 
         void btn_add_text_click(object sender, RoutedEventArgs e)
@@ -122,19 +127,15 @@ namespace VideoCapture
             }
         }
 
-        //private void cbx_font_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        //{
-        //    if (currentFilter == null) return;
-        //    if (currentFilter._type == Filtre.FiltreType.texte)
-        //    {
-        //        Filtre_TXT ft = (Filtre_TXT)currentFilter;
+        private void btn_filtre_save_Click(object sender, MouseButtonEventArgs e)
+        {
+            mainWindow.Config_Filters_Save();
+        }
 
-        //        ft.font = (OpenCvSharp.HersheyFonts)cbx_font.SelectedItem;
-        //    }
-        //}
-
-
-
-
+        private void btn_filtre_load_Click(object sender, MouseButtonEventArgs e)
+        {
+            mainWindow.Config_Filters_Load();
+            OnPropertyChanged("_ListFilters");
+        }
     }
 }

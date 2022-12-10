@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,63 @@ namespace VideoCapture
 {
     public class Filtre_TXT : Filtre
     {
+        public bool Dynamic
+        {
+            get { return dynamic; }
+            set
+            {
+                dynamic = value;
+                OnPropertyChanged("Dynamic");
+                OnPropertyChanged("Filtre_TXT_Static_Free");
+                UpdateTitle();
+            }
+        }
+        bool dynamic;
+
+        [JsonIgnore]
+        public bool Static
+        {
+            get { return !Dynamic; }
+        }
+
+        [JsonIgnore]
+        public bool Filtre_TXT_Static_Free
+        {
+            get
+            {
+                return Static && filtre_TXT_Static_Type == Filtre_TXT_Static_Type.Free;
+            }
+        }
+
+        public enum Filtre_TXT_Static_Type { Free, DeviceName }
+        public enum Filtre_TXT_Dynamic_Type { Date, Time, Time_ms, FrameNumber, FPS }
+
+        public Filtre_TXT_Static_Type filtre_TXT_Static_Type
+        {
+            get { return _filtre_TXT_Static_Type; }
+            set
+            {
+                _filtre_TXT_Static_Type = value;
+                UpdateTitle();
+                OnPropertyChanged("filtre_TXT_Static_Type");
+                OnPropertyChanged("Filtre_TXT_Static_Free");
+            }
+        }
+        Filtre_TXT_Static_Type _filtre_TXT_Static_Type;
+
+        public Filtre_TXT_Dynamic_Type filtre_TXT_Dynamic_Type
+        {
+            get { return _filtre_TXT_Dynamic_Type; }
+            set
+            {
+                _filtre_TXT_Dynamic_Type = value;
+                UpdateTitle();
+                OnPropertyChanged("filtre_TXT_Dynamic_Type");
+                OnPropertyChanged("Filtre_TXT_Static_Free");
+            }
+        }
+        Filtre_TXT_Dynamic_Type _filtre_TXT_Dynamic_Type;
+
         public string txt
         {
             get { return _txt; }
@@ -30,8 +88,7 @@ namespace VideoCapture
                 OnPropertyChanged("font");
             }
         }
-        OpenCvSharp.HersheyFonts _font = OpenCvSharp.HersheyFonts.HersheyPlain;
-
+        OpenCvSharp.HersheyFonts _font = OpenCvSharp.HersheyFonts.HersheyDuplex;
 
         public double FontScale
         {
@@ -42,7 +99,18 @@ namespace VideoCapture
                 OnPropertyChanged("FontScale");
             }
         }
-        double fontScale = 1;
+        double fontScale = 2;
+
+        public int FontThickness
+        {
+            get { return fontThickness; }
+            set
+            {
+                fontThickness = value;
+                OnPropertyChanged("FontThickness");
+            }
+        }
+        int fontThickness = 3;
 
         public double Alpha
         {
@@ -79,6 +147,8 @@ namespace VideoCapture
             Y = 0.5;
             H = 0.1;
             W = 0.1;
+            _type = FiltreType.texte;
+            isTxt = true;
         }
 
         public override void UpdateTitle()
@@ -94,7 +164,8 @@ namespace VideoCapture
                 ")\t" +
                 txt +
                 "\t" +
-                color.ToString();
+                color.ToString() +
+                (Dynamic ? " [D]" : " [S]");
         }
     }
 }

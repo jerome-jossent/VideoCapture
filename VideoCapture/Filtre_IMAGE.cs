@@ -11,6 +11,7 @@ namespace VideoCapture
         public Filtre_IMAGE()
         {
             _type = FiltreType.image;
+            isImage = true;
         }
 
         public override void UpdateTitle()

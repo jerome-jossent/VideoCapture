@@ -11,6 +11,7 @@ using System.Windows.Media.Imaging;
 using System.ComponentModel;
 using System.IO;
 using System.Collections.ObjectModel;
+using Newtonsoft.Json;
 
 // Disable Dpi awareness in the application assembly.
 //[assembly: System.Windows.Media.DisableDpiAwareness]
@@ -39,8 +40,18 @@ namespace VideoCapture
         bool flip_v;
         RotateFlags? rotation;
 
-        // Filtres
-        public ObservableCollection<Filtre> filtres = new ObservableCollection<Filtre>();
+        // Filtres         
+        public ObservableCollection<Filtre> filtres
+        {
+            get { return __filtres; }
+            set
+            {
+                __filtres = value;
+                OnPropertyChanged("filtres");
+            }
+        }
+        ObservableCollection<Filtre> __filtres = new ObservableCollection<Filtre>();
+
         Dictionary<string, MenuItem> _filtres;
         string dossierFiltres = AppDomain.CurrentDomain.BaseDirectory + "Filters";
         string filtername;
@@ -413,7 +424,10 @@ namespace VideoCapture
             Get_WindowsScreenScale();
 
             if (AUTORELOAD)
+            {
                 Config_Load();
+                Config_Filters_Load();
+            }
         }
 
         #region SCREENSHOT
@@ -621,6 +635,7 @@ namespace VideoCapture
                         Height = cameraConfiguration.height;
                         configLoading = false;
                     });
+                    Filter_Update();
                 }
 
                 while (isRunning)
@@ -939,8 +954,11 @@ namespace VideoCapture
                 {
                     case Filtre.FiltreType.texte:
                         Filtre_TXT ft = (Filtre_TXT)f;
-                        Scalar ftcolor = new Scalar(ft.color.B, ft.color.G, ft.color.R, ft.color.A);
-                        Cv2.PutText(filterframe, ft.txt, p, ft.font, ft.FontScale, ftcolor, thickness: 1, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                        if (ft.txt != null && ft.txt != "")
+                        {
+                            Scalar ftcolor = new Scalar(ft.color.B, ft.color.G, ft.color.R, ft.color.A);
+                            Cv2.PutText(filterframe, ft.txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                        }
                         break;
 
                     case Filtre.FiltreType.image:
@@ -954,7 +972,11 @@ namespace VideoCapture
             //Cv2.NamedWindow("bib");
             //Cv2.ImShow("bib", filterframe);
             //filterframe.SaveImage("d:\\test.png");
-            imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe));
+            if (!filterframe.Empty())
+                Application.Current.Dispatcher.Invoke(() => {
+                    imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe));
+                });
+
 
             //_imageCalque = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe);
         }
@@ -1141,7 +1163,23 @@ namespace VideoCapture
             cbx_deviceFormat.SelectedValue = cameraConfiguration.format;
             configLoading = true;
         }
-        #endregion
 
+        public void Config_Filters_Save()
+        {
+            var jset = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
+            string output = JsonConvert.SerializeObject(filtres, Formatting.Indented, jset);
+            Properties.Settings.Default.filters = output;
+            Properties.Settings.Default.Save();
+        }
+
+        public void Config_Filters_Load()
+        {
+            string txt = Properties.Settings.Default.filters;
+            var jset = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
+            ObservableCollection<Filtre> c = (ObservableCollection<Filtre>)JsonConvert.DeserializeObject(txt, jset);
+            filtres = c;
+            //Filter_Update();
+        }
+        #endregion
     }
 }

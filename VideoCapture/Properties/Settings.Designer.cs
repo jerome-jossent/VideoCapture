@@ -70,5 +70,17 @@ namespace VideoCapture.Properties {
                 this["HideMenu"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string filters {
+            get {
+                return ((string)(this["filters"]));
+            }
+            set {
+                this["filters"] = value;
+            }
+        }
     }
 }

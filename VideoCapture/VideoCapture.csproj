@@ -87,8 +87,13 @@
     <Reference Include="SharpDX.MediaFoundation, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpDX.MediaFoundation.4.2.0\lib\net45\SharpDX.MediaFoundation.dll</HintPath>
     </Reference>
-    <Reference Include="Standard_UC_JJO">
-      <HintPath>..\..\Standard_UC_JJO\Standard_UC_.Net4_JJO\bin\Release\Standard_UC_JJO.dll</HintPath>
+    <Reference Include="Standard_UC_JJO, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\Standard_UC_JJO.dll</HintPath>
+    </Reference>
+    <Reference Include="Standard_UC_Net4_7_2_JJO, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\Standard_UC_Net4_7_2_JJO.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
@@ -132,6 +137,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="BooleanToVisibilityConverter.cs" />
+    <Compile Include="BoolToOppositeBoolConverter.cs" />
     <Compile Include="CameraConfiguration.cs" />
     <Compile Include="Filtre.cs" />
     <Compile Include="Filtre_IMAGE.cs" />
@@ -139,6 +146,7 @@
       <DependentUpon>Filtre_Manager.xaml</DependentUpon>
     </Compile>
     <Compile Include="Filtre_TXT.cs" />
+    <Compile Include="InverseBooleanConverter.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -188,10 +196,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Standard_UC_JJO\Standard_UC_.Net4.7.2_JJO\Standard_UC_.Net4.7.2_JJO\Standard_UC_Net4_7_2_JJO.csproj">
-      <Project>{859512e7-50bf-40ac-a772-72df852098f4}</Project>
-      <Name>Standard_UC_Net4_7_2_JJO</Name>
-    </ProjectReference>
     <ProjectReference Include="..\ImageProcessing\ImageProcessing.csproj">
       <Project>{45e48cad-d8c8-4a1c-bc81-0f81b0b5b1d8}</Project>
       <Name>ImageProcessing</Name>
@@ -272,6 +276,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="DirectShowLib-2005.dll" />
+    <Content Include="Standard_UC_JJO.dll" />
+    <Content Include="Standard_UC_JJO.pdb" />
     <Resource Include="Resources\Moins.png" />
     <Resource Include="Resources\Plus.png" />
     <Resource Include="Resources\load.png" />
