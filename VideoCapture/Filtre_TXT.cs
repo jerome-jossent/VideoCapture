@@ -47,7 +47,7 @@ namespace VideoCapture
                 OnPropertyChanged("color");
             }
         }
-        Color _color;
+        Color _color = Colors.Black;
 
         public Filtre_TXT(string texte)
         {

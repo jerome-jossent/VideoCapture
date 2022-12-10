@@ -13,16 +13,12 @@
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="auto"/>
-                <ColumnDefinition Width="auto"/>
-                <ColumnDefinition Width="auto"/>
-            </Grid.ColumnDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Height="40">
+            <Button Margin="2" Content="Add Image" Click="btn_add_image_click"/>
+            <Button Margin="2" Content="Add Text" Click="btn_add_text_click"/>
+            <Image Margin="2" Source="/Resources/Moins.png" MouseDown="btn_filtre_moins_Click" ToolTip="Delete selected filter" RenderOptions.BitmapScalingMode="Fant"/>
 
-            <Button Grid.Column="0" Content="Add Image" Click="btn_add_image_click"/>
-            <Button Grid.Column="1" Content="Add Text" Click="btn_add_text_click"/>
-        </Grid>
+        </StackPanel>
 
         <Grid  Grid.Row="1" >
             <Grid.ColumnDefinitions>
@@ -31,7 +27,7 @@
             </Grid.ColumnDefinitions>
 
             <ListBox Grid.Column="0" ItemsSource="{Binding _ListFilters, Mode=TwoWay, NotifyOnSourceUpdated=True}"
-                    SelectedItem="{Binding currentFilter}" >
+                    SelectedItem="{Binding currentFilter, Mode=TwoWay, NotifyOnSourceUpdated=True}" >
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding title}"/>
@@ -78,8 +74,6 @@
                 </Grid>
             </StackPanel>
 
-
-        </Grid>
-        
+        </Grid>        
     </Grid>
 </Window>

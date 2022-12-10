@@ -75,7 +75,7 @@ namespace VideoCapture
         void MyType_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             //if (e.PropertyName == "MyProperty")
-                mainWindow.Filter_Update();
+            mainWindow.Filter_Update();
         }
 
         private void ColorPicker__ColorNew(object sender, Standard_UC_JJO.ColorPickerJJO.NewColorEventArgs e)
@@ -104,6 +104,20 @@ namespace VideoCapture
             Filtre_TXT f = new Filtre_TXT("Your text here");
             _ListFilters.Add(f);
             currentFilter = f;
+        }
+
+        private void btn_filtre_moins_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (currentFilter != null)
+            {
+                int index = _ListFilters.IndexOf(currentFilter);
+                _ListFilters.Remove(currentFilter);
+                if (_ListFilters.Count > 0)
+                    if (_ListFilters.Count - 1 >= index)
+                        currentFilter = _ListFilters[index];
+                    else
+                        currentFilter = _ListFilters[index - 1];
+            }
         }
     }
 }

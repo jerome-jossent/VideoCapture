@@ -272,6 +272,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="DirectShowLib-2005.dll" />
+    <Resource Include="Resources\Moins.png" />
+    <Resource Include="Resources\Plus.png" />
     <Resource Include="Resources\load.png" />
     <Resource Include="Resources\save.png" />
     <Resource Include="Resources\interrogation.png" />
