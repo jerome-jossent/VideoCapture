@@ -140,13 +140,10 @@ namespace VideoCapture
         }
         Color _color = Colors.Black;
 
-        public Filtre_TXT(string texte)
+        public Filtre_TXT()
         {
-            txt = texte;
             X = 0.5;
             Y = 0.5;
-            H = 0.1;
-            W = 0.1;
             _type = FiltreType.texte;
             isTxt = true;
         }
@@ -156,11 +153,7 @@ namespace VideoCapture
             title = "xy(" +
                 X.ToString("0.000") +
                 "|" +
-                Y.ToString("0.000") +
-                ")\twh(" +
-                W.ToString("0.000") +
-                "|" +
-                H.ToString("0.000") +
+                Y.ToString("0.000") +                
                 ")\t" +
                 txt +
                 "\t" +

@@ -59,30 +59,6 @@ namespace VideoCapture
         }
         double y;
 
-        public double W
-        {
-            get { return w; }
-            set
-            {
-                w = value;
-                UpdateTitle();
-                OnPropertyChanged("W");
-            }
-        }
-        double w;
-
-        public double H
-        {
-            get { return h; }
-            set
-            {
-                h = value;
-                UpdateTitle();
-                OnPropertyChanged("H");
-            }
-        }
-        double h;
-
         public enum FiltreType { texte, image }
         public FiltreType _type;
     }

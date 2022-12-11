@@ -9,6 +9,7 @@
         Title="Filtre_Manager" Height="450" Width="900"
         xmlns:OpenCvSharp="clr-namespace:OpenCvSharp;assembly=OpenCvSharp"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"     
+        xmlns:xtended="http://schemas.xceed.com/wpf/xaml/toolkit"
         >
 
     <Window.Resources>
@@ -136,7 +137,10 @@
 
                     <Label Grid.Column="0"  Content="Scale"/>
                     <Slider Grid.Column="1"  VerticalAlignment="Center" Minimum="0.1" Maximum="10" TickFrequency="0.01" Value="{Binding currentFilter.FontScale}"/>
-                    <Label Grid.Column="2" Content="{Binding currentFilter.FontScale}"/>
+                    <xtended:DoubleUpDown Grid.Column="2" Value="{Binding currentFilter.FontScale, UpdateSourceTrigger=PropertyChanged}" 
+                                          FormatString="F1" Minimum="0.1" Maximum="10" Increment="0.1"/>
+
+
                 </Grid>
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -145,8 +149,9 @@
                         <ColumnDefinition Width="50"/>
                     </Grid.ColumnDefinitions>
                     <Label Grid.Column="0"  Content="Thickness"/>
-                    <Slider Grid.Column="1"  VerticalAlignment="Center" Minimum="-1" Maximum="10" IsSnapToTickEnabled="True" Value="{Binding currentFilter.FontThickness}"/>
-                    <Label Grid.Column="2" Content="{Binding currentFilter.FontThickness}"/>
+                    <Slider Grid.Column="1"  VerticalAlignment="Center" Minimum="0" Maximum="20" IsSnapToTickEnabled="True" Value="{Binding currentFilter.FontThickness}"/>
+                    <xtended:DoubleUpDown Grid.Column="2" Value="{Binding currentFilter.FontThickness, UpdateSourceTrigger=PropertyChanged}" 
+                                          FormatString="F0" Minimum="0" Maximum="20" Increment="1"/>
                 </Grid>
             </StackPanel>
 
@@ -163,7 +168,8 @@
                     </Grid.ColumnDefinitions>
                     <Label Grid.Column="0" Content="Alpha" Background="{Binding currentFilter.color, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
                     <Slider Grid.Column="1" VerticalAlignment="Center" Minimum="0" Maximum="1" TickFrequency="0.01" Value="{Binding currentFilter.Alpha}"/>
-                    <Label Grid.Column="2" Content="{Binding currentFilter.Alpha}"/>
+                    <xtended:DoubleUpDown Grid.Column="2" Value="{Binding currentFilter.Alpha, UpdateSourceTrigger=PropertyChanged}"
+                                          FormatString="F2" Minimum="0" Maximum="1" Increment="0.01" />
                 </Grid>
             </StackPanel>
 
@@ -177,8 +183,9 @@
                     <ColumnDefinition Width="20"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="20"/>
-                    <RowDefinition Height="50"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
                     <RowDefinition Height="25"/>
                     <RowDefinition Height="25"/>
                 </Grid.RowDefinitions>
@@ -186,12 +193,14 @@
                 <Label Grid.Column="2" Grid.Row="1" Content="X"/>
                 <Slider Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" VerticalAlignment="Center" 
                         Minimum="0" Maximum="1" TickFrequency="0.01" Value="{Binding currentFilter.X}"/>
-                <Label Grid.Column="1" Grid.Row="1" HorizontalAlignment="Center" Content="{Binding currentFilter.X}"/>
+                <xtended:DoubleUpDown Grid.Column="1" Grid.Row="1" HorizontalAlignment="Center" Value="{Binding currentFilter.X, UpdateSourceTrigger=PropertyChanged}" 
+                                      FormatString="F3" Minimum="0" Maximum="1" Increment="0.001" />
 
-                <Slider Grid.Column="0" Grid.Row="0" Grid.RowSpan="4" Orientation="Vertical" IsDirectionReversed="True"
+                <Slider Grid.Column="0" Grid.Row="0" Grid.RowSpan="5" Orientation="Vertical" IsDirectionReversed="True"
                         Minimum="0" Maximum="1" TickFrequency="0.01" Value="{Binding currentFilter.Y}"/>
-                <Label Grid.Column="1"  Grid.Row="2" HorizontalAlignment="Left" Content="{Binding currentFilter.Y}"/>
-                <Label Grid.Column="1"  Grid.Row="3" Content="Y"/>
+                <xtended:DoubleUpDown Grid.Column="1"  Grid.Row="2" HorizontalAlignment="Left" Value="{Binding currentFilter.Y, UpdateSourceTrigger=PropertyChanged}" 
+                                      FormatString="F3" Minimum="0" Maximum="1" Increment="0.001" />
+                <Label Grid.Column="1"  Grid.Row="4" Content="Y"/>
             </Grid>
             
         </StackPanel>

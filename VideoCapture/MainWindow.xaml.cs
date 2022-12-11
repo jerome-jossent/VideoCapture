@@ -422,6 +422,7 @@ namespace VideoCapture
             WindowBarManagement();
 
             Get_WindowsScreenScale();
+            FilterManager_INIT();
 
             if (AUTORELOAD)
             {
@@ -936,10 +937,14 @@ namespace VideoCapture
 
 
         //NEW GENERATION
-        private void FilterManager_Click(object sender, MouseButtonEventArgs e)
+        void FilterManager_INIT()
         {
             filtre_manager = new Filtre_Manager();
             filtre_manager._Link(this);
+        }
+
+        private void FilterManager_Click(object sender, MouseButtonEventArgs e)
+        {
             filtre_manager.Show();
         }
 
@@ -954,11 +959,27 @@ namespace VideoCapture
                 {
                     case Filtre.FiltreType.texte:
                         Filtre_TXT ft = (Filtre_TXT)f;
-                        if (ft.txt != null && ft.txt != "")
+                        if (ft.Static)
                         {
                             Scalar ftcolor = new Scalar(ft.color.B, ft.color.G, ft.color.R, ft.color.A);
-                            Cv2.PutText(filterframe, ft.txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                            string txt = "";
+                            switch (ft.filtre_TXT_Static_Type)
+                            {
+                                case Filtre_TXT.Filtre_TXT_Static_Type.Free:
+                                    if (ft.txt == null || ft.txt == "")
+                                        continue;
+
+                                    txt = ft.txt;
+                                    break;
+                                case Filtre_TXT.Filtre_TXT_Static_Type.DeviceName:
+                                    txt = current_device.Name;
+                                    break;
+                                default:
+                                    break;
+                            }
+                            Cv2.PutText(filterframe, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
                         }
+
                         break;
 
                     case Filtre.FiltreType.image:
@@ -973,7 +994,8 @@ namespace VideoCapture
             //Cv2.ImShow("bib", filterframe);
             //filterframe.SaveImage("d:\\test.png");
             if (!filterframe.Empty())
-                Application.Current.Dispatcher.Invoke(() => {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
                     imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe));
                 });
 
@@ -1178,7 +1200,10 @@ namespace VideoCapture
             var jset = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
             ObservableCollection<Filtre> c = (ObservableCollection<Filtre>)JsonConvert.DeserializeObject(txt, jset);
             filtres = c;
-            //Filter_Update();
+
+
+            foreach (Filtre item in filtres)
+                item.PropertyChanged += filtre_manager.MyType_PropertyChanged;
         }
         #endregion
     }

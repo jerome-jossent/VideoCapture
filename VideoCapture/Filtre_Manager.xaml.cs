@@ -16,6 +16,8 @@ using System.ComponentModel;
 using System.Collections.ObjectModel;
 using Newtonsoft.Json;
 
+using System.Text.RegularExpressions;
+
 namespace VideoCapture
 {
     /// <summary>
@@ -75,7 +77,7 @@ namespace VideoCapture
                     item.PropertyChanged -= MyType_PropertyChanged;
         }
 
-        void MyType_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        public void MyType_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             //if (e.PropertyName == "MyProperty")
             mainWindow.Filter_Update();
@@ -108,7 +110,7 @@ namespace VideoCapture
 
         void btn_add_text_click(object sender, RoutedEventArgs e)
         {
-            Filtre_TXT f = new Filtre_TXT("Your text here");
+            Filtre_TXT f = new Filtre_TXT();
             _ListFilters.Add(f);
             currentFilter = f;
 
