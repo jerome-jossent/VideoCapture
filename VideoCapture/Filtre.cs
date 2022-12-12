@@ -16,6 +16,9 @@ namespace VideoCapture
         [JsonIgnore]
         public bool isTxt;
 
+        public bool Dynamic;
+
+
         protected void OnPropertyChanged(string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

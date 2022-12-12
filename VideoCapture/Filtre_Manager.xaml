@@ -9,7 +9,8 @@
         Title="Filtre_Manager" Height="450" Width="900"
         xmlns:OpenCvSharp="clr-namespace:OpenCvSharp;assembly=OpenCvSharp"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"     
-        xmlns:xtended="http://schemas.xceed.com/wpf/xaml/toolkit"
+        xmlns:xtended="http://schemas.xceed.com/wpf/xaml/toolkit" Closing="Window_Closing"
+        
         >
 
     <Window.Resources>

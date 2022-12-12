@@ -51,6 +51,8 @@ namespace VideoCapture
             }
         }
         ObservableCollection<Filtre> __filtres = new ObservableCollection<Filtre>();
+        bool filtres_aumoins1dynamic;
+
 
         Dictionary<string, MenuItem> _filtres;
         string dossierFiltres = AppDomain.CurrentDomain.BaseDirectory + "Filters";
@@ -60,7 +62,8 @@ namespace VideoCapture
         Mat frame_augmentation;
 
         // CAMERA
-        Thread thread;
+        Thread threadCapture;
+        Thread threadFiltre;
         int indexDevice;
         VideoInInfo.Format format;
         private bool newFormat;
@@ -69,6 +72,7 @@ namespace VideoCapture
         Dictionary<string, VideoInInfo.Format> formats;
         OpenCvSharp.VideoCapture capture;
         bool isRunning = false;
+        bool isRunningFiltre = false;
 
         System.Windows.Threading.DispatcherTimer mouseEnterEventDelayTimer = new System.Windows.Threading.DispatcherTimer();
         double MouseEnter_Delay_sec = 3;
@@ -107,6 +111,8 @@ namespace VideoCapture
             }
         }
         string fps;
+
+        float _FPS;
 
         public string _Infos
         {
@@ -407,9 +413,10 @@ namespace VideoCapture
         {
             isRunning = false;
             CaptureCameraStop();
+            FiltreCameraStop();
 
             if (filtre_manager != null)
-                filtre_manager.Close();
+                filtre_manager.ReallyClose();
         }
 
         void INITS()
@@ -532,6 +539,9 @@ namespace VideoCapture
             isRunning = true;
             indexDevice = cbx_device.SelectedIndex;
             CaptureCamera(indexDevice);
+
+            isRunningFiltre = true;
+            FiltreCamera();
         }
 
         private void Combobox_CaptureDevice_Change(object sender, SelectionChangedEventArgs e)
@@ -575,14 +585,25 @@ namespace VideoCapture
         #region CAPTURE MANAGEMENT
         void CaptureCamera(int index)
         {
-            if (thread != null && thread.IsAlive)
+            if (threadCapture != null && threadCapture.IsAlive)
             {
-                thread.Abort();
+                threadCapture.Abort();
                 Thread.Sleep(100);
             }
             indexDevice = index;
-            thread = new Thread(new ThreadStart(CaptureCameraCallback));
-            thread.Start();
+            threadCapture = new Thread(new ThreadStart(CaptureCameraCallback));
+            threadCapture.Start();
+        }
+
+        void FiltreCamera()
+        {
+            if (threadFiltre != null && threadFiltre.IsAlive)
+            {
+                threadFiltre.Abort();
+                Thread.Sleep(100);
+            }
+            threadFiltre = new Thread(new ThreadStart(FiltreCameraCallback));
+            threadFiltre.Start();
         }
 
         void CaptureCameraStop()
@@ -591,7 +612,17 @@ namespace VideoCapture
             {
                 isRunning = false;
                 Thread.Sleep(100);
-                thread?.Abort();
+                threadCapture?.Abort();
+            }
+        }
+
+        void FiltreCameraStop()
+        {
+            if (isRunningFiltre)
+            {
+                isRunningFiltre = false;
+                Thread.Sleep(100);
+                threadFiltre?.Abort();
             }
         }
 
@@ -691,6 +722,81 @@ namespace VideoCapture
             }
             capture.Dispose();
         }
+
+        void FiltreCameraCallback()
+        {
+            while (isRunningFiltre)
+            {
+                if (filtres.Count > 0)
+                {
+                    Mat f;
+                    if (!filterframe.Empty())
+                        f = filterframe.Clone();
+                    else
+                        f = new Mat(frame.Size(), MatType.CV_8UC4);
+
+                    if (filtres_aumoins1dynamic)
+                    {
+                        foreach (Filtre filtre in filtres)
+                        {
+                            if (filtre.Dynamic)
+                            {
+                                OpenCvSharp.Point p = new OpenCvSharp.Point(filtre.X * filterframe.Width, filtre.Y * filterframe.Height);
+                                switch (filtre._type)
+                                {
+                                    case Filtre.FiltreType.texte:
+                                        Filtre_TXT ft = (Filtre_TXT)filtre;
+
+                                        Scalar ftcolor = new Scalar(ft.color.B, ft.color.G, ft.color.R, ft.color.A);
+                                        string txt = "";
+                                        switch (ft.filtre_TXT_Dynamic_Type)
+                                        {
+                                            case Filtre_TXT.Filtre_TXT_Dynamic_Type.Date:
+                                                txt = DateTime.Now.ToString("yyyy-MM-dd");
+                                                break;
+                                            case Filtre_TXT.Filtre_TXT_Dynamic_Type.Time:
+                                                txt = DateTime.Now.ToString("HH:mm:ss");
+                                                break;
+                                            case Filtre_TXT.Filtre_TXT_Dynamic_Type.Time_ms:
+                                                txt = DateTime.Now.ToString("HH:mm:ss.fff");
+                                                break;
+                                            case Filtre_TXT.Filtre_TXT_Dynamic_Type.Date_Time:
+                                                txt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                                                break;
+                                            case Filtre_TXT.Filtre_TXT_Dynamic_Type.Date_Time_ms:
+                                                txt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                                                break;
+                                            case Filtre_TXT.Filtre_TXT_Dynamic_Type.FrameNumber:
+                                                txt = framereallygrabbed.ToString();
+                                                break;
+                                            case Filtre_TXT.Filtre_TXT_Dynamic_Type.FPS:
+                                                txt = _FPS.ToString("f2");
+                                                break;
+                                        }
+
+                                        OpenCvSharp.Size textsize = Cv2.GetTextSize(txt, ft.font, ft.FontScale, ft.FontThickness, out int Y_baseline);
+
+                                        Cv2.PutText(f, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                                        break;
+
+                                    case Filtre.FiltreType.image:
+
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                    if (!f.Empty())
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(f));
+                        });
+                }
+
+                if (_FPS > 0)
+                    Thread.Sleep((int)(1000 / _FPS));
+            }
+        }
         #endregion
 
         #region IMAGE MANAGEMENT
@@ -718,9 +824,9 @@ namespace VideoCapture
         void FPS()
         {
             long T = chrono.ElapsedMilliseconds;
-            float f = 1000f / (T - T0);
+            _FPS = 1000f / (T - T0);
             T0 = T;
-            _fps = "[" + f.ToString("N1") + " fps]";
+            _fps = "[" + _FPS.ToString("N1") + " fps]";
         }
 
         void ctxm_rotate90_Click(object sender, RoutedEventArgs e)
@@ -951,6 +1057,7 @@ namespace VideoCapture
         public void Filter_Update()
         {
             filterframe = new Mat(frame.Size(), MatType.CV_8UC4);
+            filtres_aumoins1dynamic = false;
             foreach (Filtre f in filtres)
             {
                 OpenCvSharp.Point p = new OpenCvSharp.Point(f.X * filterframe.Width, f.Y * filterframe.Height);
@@ -979,6 +1086,10 @@ namespace VideoCapture
                             }
                             Cv2.PutText(filterframe, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
                         }
+                        if (ft.Dynamic)
+                        {
+                            filtres_aumoins1dynamic = true;
+                        }
 
                         break;
 
@@ -993,11 +1104,15 @@ namespace VideoCapture
             //Cv2.NamedWindow("bib");
             //Cv2.ImShow("bib", filterframe);
             //filterframe.SaveImage("d:\\test.png");
-            if (!filterframe.Empty())
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe));
-                });
+
+
+
+
+            ////////////////if (!filterframe.Empty())
+            ////////////////    Application.Current.Dispatcher.Invoke(() =>
+            ////////////////    {
+            ////////////////        imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe));
+            ////////////////    });
 
 
             //_imageCalque = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe);
@@ -1207,9 +1322,13 @@ namespace VideoCapture
             ObservableCollection<Filtre> c = (ObservableCollection<Filtre>)JsonConvert.DeserializeObject(txt, jset);
             filtres = c;
 
-
+            filtres_aumoins1dynamic = false;
             foreach (Filtre item in filtres)
+            {
                 item.PropertyChanged += filtre_manager.MyType_PropertyChanged;
+                if (item.isTxt && ((Filtre_TXT)item).Dynamic)
+                    filtres_aumoins1dynamic = true;
+            }
         }
         #endregion
     }

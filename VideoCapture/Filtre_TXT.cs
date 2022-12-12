@@ -10,12 +10,13 @@ namespace VideoCapture
 {
     public class Filtre_TXT : Filtre
     {
-        public bool Dynamic
+        public new bool Dynamic
         {
             get { return dynamic; }
             set
             {
                 dynamic = value;
+                base.Dynamic = dynamic;
                 OnPropertyChanged("Dynamic");
                 OnPropertyChanged("Filtre_TXT_Static_Free");
                 UpdateTitle();
@@ -39,7 +40,7 @@ namespace VideoCapture
         }
 
         public enum Filtre_TXT_Static_Type { Free, DeviceName }
-        public enum Filtre_TXT_Dynamic_Type { Date, Time, Time_ms, FrameNumber, FPS }
+        public enum Filtre_TXT_Dynamic_Type { Date, Time, Time_ms, Date_Time, Date_Time_ms, FrameNumber, FPS }
 
         public Filtre_TXT_Static_Type filtre_TXT_Static_Type
         {
@@ -150,15 +151,56 @@ namespace VideoCapture
 
         public override void UpdateTitle()
         {
+            string t = "";
+            if (Dynamic)
+            {
+
+                switch (filtre_TXT_Dynamic_Type)
+                {
+                    case Filtre_TXT_Dynamic_Type.Date:
+                        t = "Date";
+                        break;
+                    case Filtre_TXT_Dynamic_Type.Time:
+                        t = "Time";
+                        break;
+                    case Filtre_TXT_Dynamic_Type.Time_ms:
+                        t = "Time_ms";
+                        break;
+                    case Filtre_TXT_Dynamic_Type.Date_Time:
+                        t = "Date_Time";
+                        break;
+                    case Filtre_TXT_Dynamic_Type.Date_Time_ms:
+                        t = "Date_Time_ms";
+                        break;
+                    case Filtre_TXT_Dynamic_Type.FrameNumber:
+                        t = "FrameNumber";
+                        break;
+                    case Filtre_TXT_Dynamic_Type.FPS:
+                        t = "FPS";
+                        break;
+                }
+            }
+            else
+            {
+                switch (filtre_TXT_Static_Type)
+                {
+                    case Filtre_TXT_Static_Type.Free:
+                        t = txt;
+                        break;
+                    case Filtre_TXT_Static_Type.DeviceName:
+                        t = "DeviceName";
+                        break;
+                }
+            }
+
             title = "xy(" +
                 X.ToString("0.000") +
                 "|" +
-                Y.ToString("0.000") +                
+                Y.ToString("0.000") +
                 ")\t" +
-                txt +
-                "\t" +
                 color.ToString() +
-                (Dynamic ? " [D]" : " [S]");
+                (Dynamic ? "\t[D] " : "\t[S] ") +
+                t;
         }
     }
 }

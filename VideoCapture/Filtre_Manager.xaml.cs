@@ -26,7 +26,7 @@ namespace VideoCapture
     public partial class Filtre_Manager : Window, INotifyPropertyChanged
     {
         MainWindow mainWindow;
-
+        bool forceClosing;
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name = null)
         {
@@ -104,6 +104,7 @@ namespace VideoCapture
             Filtre_IMAGE f = new Filtre_IMAGE();
             _ListFilters.Add(f);
             currentFilter = f;
+            f.PropertyChanged += MyType_PropertyChanged;
 
             mainWindow.Filter_Update();
         }
@@ -113,6 +114,7 @@ namespace VideoCapture
             Filtre_TXT f = new Filtre_TXT();
             _ListFilters.Add(f);
             currentFilter = f;
+            f.PropertyChanged += MyType_PropertyChanged;
 
             mainWindow.Filter_Update();
         }
@@ -122,6 +124,7 @@ namespace VideoCapture
             if (currentFilter != null)
             {
                 int index = _ListFilters.IndexOf(currentFilter);
+                currentFilter.PropertyChanged -= MyType_PropertyChanged;
                 _ListFilters.Remove(currentFilter);
                 mainWindow.Filter_Update();
                 if (_ListFilters.Count > 0)
@@ -138,6 +141,21 @@ namespace VideoCapture
         {
             mainWindow.Config_Filters_Load();
             OnPropertyChanged("_ListFilters");
+        }
+
+        public void ReallyClose()
+        {
+            forceClosing = true;
+            Close();
+        }
+
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            if (!forceClosing)
+            {
+                e.Cancel = true;
+                this.Hide();
+            }
         }
     }
 }
