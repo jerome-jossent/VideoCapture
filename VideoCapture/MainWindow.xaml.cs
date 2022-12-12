@@ -1178,6 +1178,9 @@ namespace VideoCapture
         void Config_Load()
         {
             string txt = Properties.Settings.Default.config;
+            if (txt == null || txt == "")
+                return;
+
             cameraConfiguration = new CameraConfiguration(txt);
 
             cbx_device.SelectedValue = cameraConfiguration.deviceName;
@@ -1197,6 +1200,9 @@ namespace VideoCapture
         public void Config_Filters_Load()
         {
             string txt = Properties.Settings.Default.filters;
+            if (txt == null || txt == "")
+                return;
+
             var jset = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
             ObservableCollection<Filtre> c = (ObservableCollection<Filtre>)JsonConvert.DeserializeObject(txt, jset);
             filtres = c;
