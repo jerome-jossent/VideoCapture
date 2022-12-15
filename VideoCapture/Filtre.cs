@@ -18,6 +18,17 @@ namespace VideoCapture
 
         public bool Dynamic;
 
+        public enum TypeOrigine { UpLeft, UpMiddle, UpRight, MiddleLeft, Middle, MiddleRight, DownLeft, DownMiddle, DownRight}
+        public TypeOrigine origine {
+
+            get { return _origine; }
+            set
+            {
+                _origine = value;
+                OnPropertyChanged("origine");
+            }
+        }
+        TypeOrigine _origine;
 
         protected void OnPropertyChanged(string name = null)
         {

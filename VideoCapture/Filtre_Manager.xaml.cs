@@ -70,16 +70,15 @@ namespace VideoCapture
         {
             if (e.NewItems != null)
                 foreach (Filtre item in e.NewItems)
-                    item.PropertyChanged += MyType_PropertyChanged;
+                    item.PropertyChanged += FilterPropertyChanged;
 
             if (e.OldItems != null)
                 foreach (Filtre item in e.OldItems)
-                    item.PropertyChanged -= MyType_PropertyChanged;
+                    item.PropertyChanged -= FilterPropertyChanged;
         }
 
-        public void MyType_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        public void FilterPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            //if (e.PropertyName == "MyProperty")
             mainWindow.Filter_Update();
         }
 
@@ -104,7 +103,7 @@ namespace VideoCapture
             Filtre_IMAGE f = new Filtre_IMAGE();
             _ListFilters.Add(f);
             currentFilter = f;
-            f.PropertyChanged += MyType_PropertyChanged;
+            f.PropertyChanged += FilterPropertyChanged;
 
             mainWindow.Filter_Update();
         }
@@ -114,7 +113,7 @@ namespace VideoCapture
             Filtre_TXT f = new Filtre_TXT();
             _ListFilters.Add(f);
             currentFilter = f;
-            f.PropertyChanged += MyType_PropertyChanged;
+            f.PropertyChanged += FilterPropertyChanged;
 
             mainWindow.Filter_Update();
         }
@@ -124,7 +123,7 @@ namespace VideoCapture
             if (currentFilter != null)
             {
                 int index = _ListFilters.IndexOf(currentFilter);
-                currentFilter.PropertyChanged -= MyType_PropertyChanged;
+                currentFilter.PropertyChanged -= FilterPropertyChanged;
                 _ListFilters.Remove(currentFilter);
                 mainWindow.Filter_Update();
                 if (_ListFilters.Count > 0)

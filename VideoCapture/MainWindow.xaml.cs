@@ -26,6 +26,11 @@ namespace VideoCapture
 
         const string version = "version 2022/12/05";
 
+
+
+        OpenCvSharp.Rect roi = new OpenCvSharp.Rect(); //region of interest (crop)
+        bool roi_enabled = false;
+
         #region VARIABLES & PARAMETERS
         // FPS
         long T0;
@@ -798,6 +803,19 @@ namespace VideoCapture
             }
         }
         #endregion
+        Mat ROI(Mat frame, OpenCvSharp.Rect roi)
+        {
+            Mat _out = new Mat();
+            if (roi.Width > 0 &&
+                    frame.Height - roi.Y > 0 &&
+                    frame.Width - roi.X > 0 &&
+                    frame.Height - (roi.Y + roi.Height) > 0 &&
+                    frame.Width - (roi.X + roi.Width) > 0)
+                _out = new Mat(frame, roi);
+            else
+                _out = frame;
+            return _out;
+        }
 
         #region IMAGE MANAGEMENT
         void Show(Mat frame)
@@ -805,6 +823,12 @@ namespace VideoCapture
             if (!frame.Empty())
             {
                 Mat frameShowed;
+
+                if (roi_enabled)
+                {
+                    frame = ROI(frame, roi);
+                }
+
                 if (actualWidth < frame.Width)
                 {
                     frameShowed = new Mat();
@@ -893,6 +917,31 @@ namespace VideoCapture
         {
             flip_v = !flip_v;
             ((MenuItem)sender).IsChecked = flip_v;
+        }
+        #endregion
+
+        #region CROP
+
+        private void ctxm_cropSet_Click(object sender, RoutedEventArgs e)
+        {
+            if (frame.Empty())
+                return;
+
+            string window_name = "Valid ROI with 'Enter' or 'Space', Cancel with 'c'";
+            OpenCvSharp.Rect newroi = Cv2.SelectROI(window_name, frame, true);
+            if (newroi.Width > 0 && newroi.Height > 0)
+            {
+                roi = newroi;
+                roi_enabled = true;
+            }
+
+            Cv2.DestroyWindow(window_name);
+        }
+
+        private void ctxm_cropNone_Click(object sender, RoutedEventArgs e)
+        {
+            roi = new OpenCvSharp.Rect();
+            roi_enabled = false;
         }
         #endregion
 
@@ -1325,11 +1374,12 @@ namespace VideoCapture
             filtres_aumoins1dynamic = false;
             foreach (Filtre item in filtres)
             {
-                item.PropertyChanged += filtre_manager.MyType_PropertyChanged;
+                item.PropertyChanged += filtre_manager.FilterPropertyChanged;
                 if (item.isTxt && ((Filtre_TXT)item).Dynamic)
                     filtres_aumoins1dynamic = true;
             }
         }
         #endregion
+
     }
 }

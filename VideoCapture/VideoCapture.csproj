@@ -291,6 +291,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="DirectShowLib-2005.dll" />
+    <Resource Include="Resources\crop.png" />
     <Content Include="Standard_UC_JJO.dll" />
     <Content Include="Standard_UC_JJO.pdb" />
     <Resource Include="Resources\Moins.png" />

@@ -147,6 +147,7 @@ namespace VideoCapture
             Y = 0.5;
             _type = FiltreType.texte;
             isTxt = true;
+            origine = TypeOrigine.DownLeft;
         }
 
         public override void UpdateTitle()

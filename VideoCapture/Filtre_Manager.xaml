@@ -80,7 +80,7 @@
 
         <!-- FORMULAIRE TEXTE -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" 
-                    Visibility="{Binding Path=currentFilter.isTxt, Converter={StaticResource BoolToVis}}"
+                    Visibility="{Binding Path=currentFilter.isTxt, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Converter={StaticResource BoolToVis}}"
                     >
 
             

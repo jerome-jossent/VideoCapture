@@ -41,6 +41,7 @@ namespace VideoCapture
             Y = 0.5;
             H = 0.1;
             W = 0.1;
+            origine = TypeOrigine.Middle;
         }
 
         public override void UpdateTitle()

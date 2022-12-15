@@ -149,6 +149,30 @@
                         </MenuItem>
                     </MenuItem>
 
+                    <!-- Crop -->
+                    <MenuItem>
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="20" Height="20" Source="/Resources/crop.png" RenderOptions.BitmapScalingMode="Fant"/>
+                                <ContentPresenter Margin="10,0,0,0" Content="Crop" />
+                            </StackPanel>
+                        </MenuItem.Header>
+
+                        <MenuItem Click="ctxm_cropSet_Click">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <ContentPresenter Margin="10,0,0,0" Content="Set" />
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem Click="ctxm_cropNone_Click">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <ContentPresenter Margin="10,0,0,0" Content="None" />
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                    </MenuItem>
                     <Separator />
 
                     <!-- Filters -->
