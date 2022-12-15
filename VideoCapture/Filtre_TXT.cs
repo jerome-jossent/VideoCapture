@@ -203,5 +203,10 @@ namespace VideoCapture
                 (Dynamic ? "\t[D] " : "\t[S] ") +
                 t;
         }
+
+        //public override object Clone()
+        //{
+        //    return this.Clone();
+        //}
     }
 }

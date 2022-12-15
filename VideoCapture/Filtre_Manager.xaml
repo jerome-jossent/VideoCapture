@@ -50,9 +50,42 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0" Orientation="Horizontal" Height="40">
-                <Button Margin="2" Padding="10,0" VerticalContentAlignment="Center" Content="Add Image" Click="btn_add_image_click"/>
-                <Button Margin="2" Padding="10,0" VerticalContentAlignment="Center" Content="Add Text" Click="btn_add_text_click"/>
-                <Image Margin="2" Source="/Resources/Moins.png" MouseDown="btn_filtre_moins_Click" ToolTip="Delete selected filter" RenderOptions.BitmapScalingMode="Fant"/>
+                <Button Margin="2" VerticalContentAlignment="Center" Click="btn_add_image_click"
+                        Background="Transparent">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Margin="2" Source="/Resources/Plus.png" RenderOptions.BitmapScalingMode="Fant"/>
+                            <Label Content="Add Image" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
+
+                <Button Margin="2" VerticalContentAlignment="Center" Click="btn_add_text_click"
+                        Background="Transparent">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Margin="2" Source="/Resources/Plus.png" RenderOptions.BitmapScalingMode="Fant"/>
+                            <Label Content="Add Text" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
+                
+                <Image Margin="2" Source="/Resources/Moins.png" MouseDown="btn_filtre_moins_Click" 
+                       IsEnabled="{Binding oneFiltreIsSelected}"
+                       ToolTip="Delete selected filter" RenderOptions.BitmapScalingMode="Fant"/>
+                
+                <Image Margin="2" Source="/Resources/clone.png" MouseDown="btn_filtre_duplicate_Click" 
+                       IsEnabled="{Binding oneFiltreIsSelected}"
+                       ToolTip="Clone selected filter" RenderOptions.BitmapScalingMode="Fant"/>
+
+                <Image Margin="2" Source="/Resources/arrow_up.png" MouseDown="btn_filtre_moveup_Click" 
+                       IsEnabled="{Binding oneFiltreIsSelected}"
+                       ToolTip="Move up selected filter" RenderOptions.BitmapScalingMode="Fant"/>
+                
+                <Image Margin="2" Source="/Resources/arrow_down.png" MouseDown="btn_filtre_movedown_Click" 
+                       IsEnabled="{Binding oneFiltreIsSelected}"
+                       ToolTip="Move down selected filter" RenderOptions.BitmapScalingMode="Fant"/>
+
             </StackPanel>
 
             <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal" Height="40">
@@ -68,11 +101,11 @@
                 <ColumnDefinition Width="auto"/>
             </Grid.ColumnDefinitions>
 
-            <ListBox Grid.Column="0" ItemsSource="{Binding _ListFilters, Mode=TwoWay, NotifyOnSourceUpdated=True}"
-                    SelectedItem="{Binding currentFilter, Mode=TwoWay, NotifyOnSourceUpdated=True}" >
+            <ListBox Grid.Column="0" ItemsSource="{Binding _ListFilters, Mode=TwoWay, NotifyOnSourceUpdated=True, UpdateSourceTrigger=PropertyChanged}"
+                    SelectedItem="{Binding currentFilter, Mode=TwoWay, NotifyOnSourceUpdated=True, UpdateSourceTrigger=PropertyChanged}" >
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding title}"/>
+                        <local:Filtre_liste_UC DataContext="{Binding}"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>

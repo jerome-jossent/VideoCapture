@@ -1,0 +1,20 @@
+﻿<UserControl x:Class="VideoCapture.Filtre_liste_UC"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:VideoCapture"
+             mc:Ignorable="d" 
+             d:DesignHeight="50" d:DesignWidth="500">
+    <StackPanel Orientation="Horizontal">
+        <CheckBox Margin="0,0,5,0" IsChecked="{Binding enable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+        
+        <Rectangle Margin="0,0,5,0" Width="20" Height="20">
+            <Rectangle.Fill>
+                <SolidColorBrush Color="{Binding color}" />
+            </Rectangle.Fill>
+        </Rectangle>
+        
+        <TextBlock Text="{Binding title}"/>
+    </StackPanel>
+</UserControl>

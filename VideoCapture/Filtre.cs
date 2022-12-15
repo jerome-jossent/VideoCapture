@@ -18,8 +18,9 @@ namespace VideoCapture
 
         public bool Dynamic;
 
-        public enum TypeOrigine { UpLeft, UpMiddle, UpRight, MiddleLeft, Middle, MiddleRight, DownLeft, DownMiddle, DownRight}
-        public TypeOrigine origine {
+        public enum TypeOrigine { UpLeft, UpMiddle, UpRight, MiddleLeft, Middle, MiddleRight, DownLeft, DownMiddle, DownRight }
+        public TypeOrigine origine
+        {
 
             get { return _origine; }
             set
@@ -30,12 +31,30 @@ namespace VideoCapture
         }
         TypeOrigine _origine;
 
+        public bool enable
+        {
+            get { return _enable; }
+            set
+            {
+                _enable = value;
+                OnPropertyChanged("enable");
+            }
+        }
+        bool _enable = true;
+
         protected void OnPropertyChanged(string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
         public abstract void UpdateTitle();
+        public Filtre Clone()
+        {
+            var jset = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
+            string txt = JsonConvert.SerializeObject(this, Formatting.Indented, jset);
+            Filtre f = (Filtre)JsonConvert.DeserializeObject(txt, jset);
+            return f;
+        }
 
         [JsonIgnore]
         public string title
@@ -75,5 +94,6 @@ namespace VideoCapture
 
         public enum FiltreType { texte, image }
         public FiltreType _type;
+
     }
 }

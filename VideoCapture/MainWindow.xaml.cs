@@ -27,10 +27,6 @@ namespace VideoCapture
         const string version = "version 2022/12/05";
 
 
-
-        OpenCvSharp.Rect roi = new OpenCvSharp.Rect(); //region of interest (crop)
-        bool roi_enabled = false;
-
         #region VARIABLES & PARAMETERS
         // FPS
         long T0;
@@ -58,13 +54,16 @@ namespace VideoCapture
         ObservableCollection<Filtre> __filtres = new ObservableCollection<Filtre>();
         bool filtres_aumoins1dynamic;
 
-
         Dictionary<string, MenuItem> _filtres;
         string dossierFiltres = AppDomain.CurrentDomain.BaseDirectory + "Filters";
         string filtername;
 
         Mat filterframe;
         Mat frame_augmentation;
+
+        //region of interest (crop)
+        OpenCvSharp.Rect roi = new OpenCvSharp.Rect();
+        bool roi_enabled = false;
 
         // CAMERA
         Thread threadCapture;
@@ -706,20 +705,12 @@ namespace VideoCapture
                     {
                         framereallygrabbed++;
 
-                        if (flip_h && flip_v)
+                        if (roi_enabled)
                         {
-                            frame = frame.Flip(FlipMode.XY);
-                        }
-                        else
-                        {
-                            if (flip_h)
-                                frame = frame.Flip(FlipMode.Y);
-                            if (flip_v)
-                                frame = frame.Flip(FlipMode.X);
+                            frame = ROI(frame, roi);
                         }
 
-                        if (rotation != null)
-                            Cv2.Rotate(frame, frame, (RotateFlags)rotation);
+                        frame = RotationFlip(frame, flip_h, flip_v, rotation);
 
                         Show(frame);
                     }
@@ -744,7 +735,7 @@ namespace VideoCapture
                     {
                         foreach (Filtre filtre in filtres)
                         {
-                            if (filtre.Dynamic)
+                            if (filtre.Dynamic && filtre.enable)
                             {
                                 OpenCvSharp.Point p = new OpenCvSharp.Point(filtre.X * filterframe.Width, filtre.Y * filterframe.Height);
                                 switch (filtre._type)
@@ -803,19 +794,6 @@ namespace VideoCapture
             }
         }
         #endregion
-        Mat ROI(Mat frame, OpenCvSharp.Rect roi)
-        {
-            Mat _out = new Mat();
-            if (roi.Width > 0 &&
-                    frame.Height - roi.Y > 0 &&
-                    frame.Width - roi.X > 0 &&
-                    frame.Height - (roi.Y + roi.Height) > 0 &&
-                    frame.Width - (roi.X + roi.Width) > 0)
-                _out = new Mat(frame, roi);
-            else
-                _out = frame;
-            return _out;
-        }
 
         #region IMAGE MANAGEMENT
         void Show(Mat frame)
@@ -824,10 +802,6 @@ namespace VideoCapture
             {
                 Mat frameShowed;
 
-                if (roi_enabled)
-                {
-                    frame = ROI(frame, roi);
-                }
 
                 if (actualWidth < frame.Width)
                 {
@@ -918,11 +892,46 @@ namespace VideoCapture
             flip_v = !flip_v;
             ((MenuItem)sender).IsChecked = flip_v;
         }
+
+
+        Mat RotationFlip(Mat frame, bool flip_h, bool flip_v, RotateFlags? rotation)
+        {
+            if (flip_h && flip_v)
+            {
+                frame = frame.Flip(FlipMode.XY);
+            }
+            else
+            {
+                if (flip_h)
+                    frame = frame.Flip(FlipMode.Y);
+                if (flip_v)
+                    frame = frame.Flip(FlipMode.X);
+            }
+
+            if (rotation != null)
+                Cv2.Rotate(frame, frame, (RotateFlags)rotation);
+
+            return frame;
+        }
+
         #endregion
 
         #region CROP
+        Mat ROI(Mat frame, OpenCvSharp.Rect roi)
+        {
+            Mat _out = new Mat();
+            if (roi.Width > 0 &&
+                    frame.Height - roi.Y > 0 &&
+                    frame.Width - roi.X > 0 &&
+                    frame.Height - (roi.Y + roi.Height) > 0 &&
+                    frame.Width - (roi.X + roi.Width) > 0)
+                _out = new Mat(frame, roi);
+            else
+                _out = frame;
+            return _out;
+        }
 
-        private void ctxm_cropSet_Click(object sender, RoutedEventArgs e)
+        void ctxm_cropSet_Click(object sender, RoutedEventArgs e)
         {
             if (frame.Empty())
                 return;
@@ -938,7 +947,7 @@ namespace VideoCapture
             Cv2.DestroyWindow(window_name);
         }
 
-        private void ctxm_cropNone_Click(object sender, RoutedEventArgs e)
+        void ctxm_cropNone_Click(object sender, RoutedEventArgs e)
         {
             roi = new OpenCvSharp.Rect();
             roi_enabled = false;
@@ -1109,6 +1118,9 @@ namespace VideoCapture
             filtres_aumoins1dynamic = false;
             foreach (Filtre f in filtres)
             {
+                if (!f.enable)
+                    continue;
+
                 OpenCvSharp.Point p = new OpenCvSharp.Point(f.X * filterframe.Width, f.Y * filterframe.Height);
 
                 switch (f._type)
@@ -1356,19 +1368,19 @@ namespace VideoCapture
         public void Config_Filters_Save()
         {
             var jset = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
-            string output = JsonConvert.SerializeObject(filtres, Formatting.Indented, jset);
-            Properties.Settings.Default.filters = output;
+            string json = JsonConvert.SerializeObject(filtres, Formatting.Indented, jset);
+            Properties.Settings.Default.filters = json;
             Properties.Settings.Default.Save();
         }
 
         public void Config_Filters_Load()
         {
-            string txt = Properties.Settings.Default.filters;
-            if (txt == null || txt == "")
+            string json = Properties.Settings.Default.filters;
+            if (json == null || json == "")
                 return;
 
             var jset = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
-            ObservableCollection<Filtre> c = (ObservableCollection<Filtre>)JsonConvert.DeserializeObject(txt, jset);
+            ObservableCollection<Filtre> c = (ObservableCollection<Filtre>)JsonConvert.DeserializeObject(json, jset);
             filtres = c;
 
             filtres_aumoins1dynamic = false;

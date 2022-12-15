@@ -39,13 +39,24 @@ namespace VideoCapture
             set
             {
                 _currentFilter = value;
-                /// _colorPickerJJO._ColorNew += ColorNew;
-                /// _colorPickerJJO._SetMouseSelection(0.5, 0.5);
-                /// _colorPickerJJO._SetColor(Colors.Magenta);
+                if (_currentFilter != null)
+                {
+                    if (_currentFilter.isTxt)
+                    {
+                        Filtre_TXT ft = (Filtre_TXT)_currentFilter;
+                        colorPicker._SetColor(ft.color);
+                    }
+                }
                 OnPropertyChanged("currentFilter");
+                OnPropertyChanged("oneFiltreIsSelected");
             }
         }
         Filtre _currentFilter;
+
+        public bool oneFiltreIsSelected
+        {
+            get { return currentFilter != null; }
+        }
 
         public ObservableCollection<Filtre> _ListFilters
         {
@@ -155,6 +166,37 @@ namespace VideoCapture
                 e.Cancel = true;
                 this.Hide();
             }
+        }
+
+        private void btn_filtre_duplicate_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (currentFilter == null) return;
+
+            Filtre f = (Filtre)currentFilter.Clone();
+            _ListFilters.Add(f);
+            currentFilter = f;
+            f.PropertyChanged += FilterPropertyChanged;
+
+            mainWindow.Filter_Update();
+        }
+
+        private void btn_filtre_moveup_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (currentFilter == null) return;
+            int index = _ListFilters.IndexOf(currentFilter);
+            if (index < 1) return;
+            _ListFilters.Move(index, index - 1);
+            mainWindow.Filter_Update();
+        }
+
+        private void btn_filtre_movedown_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (currentFilter == null) return;
+            int index = _ListFilters.IndexOf(currentFilter);
+            if (index >= _ListFilters.Count) return;
+            _ListFilters.Move(index, index + 1);
+            mainWindow.Filter_Update();
+
         }
     }
 }

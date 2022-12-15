@@ -157,6 +157,9 @@
     <Compile Include="CameraConfiguration.cs" />
     <Compile Include="Filtre.cs" />
     <Compile Include="Filtre_IMAGE.cs" />
+    <Compile Include="Filtre_liste_UC.xaml.cs">
+      <DependentUpon>Filtre_liste_UC.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Filtre_Manager.xaml.cs">
       <DependentUpon>Filtre_Manager.xaml</DependentUpon>
     </Compile>
@@ -169,6 +172,10 @@
     </Compile>
     <Compile Include="VideoInInfo.cs" />
     <Compile Include="VisibilityConverter.cs" />
+    <Page Include="Filtre_liste_UC.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Filtre_Manager.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -292,6 +299,9 @@
   <ItemGroup>
     <Content Include="DirectShowLib-2005.dll" />
     <Resource Include="Resources\crop.png" />
+    <Resource Include="Resources\clone.png" />
+    <Resource Include="Resources\arrow_down.png" />
+    <Resource Include="Resources\arrow_up.png" />
     <Content Include="Standard_UC_JJO.dll" />
     <Content Include="Standard_UC_JJO.pdb" />
     <Resource Include="Resources\Moins.png" />

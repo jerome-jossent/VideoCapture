@@ -48,5 +48,9 @@ namespace VideoCapture
         {
             title = "Filtre_IMAGE";
         }
+        //public override object Clone()
+        //{
+        //    return this.Clone();
+        //}
     }
 }
