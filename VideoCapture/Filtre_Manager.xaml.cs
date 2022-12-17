@@ -121,7 +121,11 @@ namespace VideoCapture
 
         void btn_add_text_click(object sender, RoutedEventArgs e)
         {
+            Enum.TryParse(((MenuItem)sender).Header.ToString(), out Filtre_TXT.Filtre_TXT_Type ftt);
+
             Filtre_TXT f = new Filtre_TXT();
+            f.filtre_TXT_Type = ftt;
+
             _ListFilters.Add(f);
             currentFilter = f;
             f.PropertyChanged += FilterPropertyChanged;
@@ -129,7 +133,7 @@ namespace VideoCapture
             mainWindow.Filter_Update();
         }
 
-        private void btn_filtre_moins_Click(object sender, MouseButtonEventArgs e)
+        private void btn_filtre_moins_Click(object sender, RoutedEventArgs e)
         {
             if (currentFilter != null)
             {
@@ -142,12 +146,12 @@ namespace VideoCapture
             }
         }
 
-        private void btn_filtre_save_Click(object sender, MouseButtonEventArgs e)
+        private void btn_filtre_save_Click(object sender, RoutedEventArgs e)
         {
             mainWindow.Config_Filters_Save();
         }
 
-        private void btn_filtre_load_Click(object sender, MouseButtonEventArgs e)
+        private void btn_filtre_load_Click(object sender, RoutedEventArgs e)
         {
             mainWindow.Config_Filters_Load();
             OnPropertyChanged("_ListFilters");
@@ -168,7 +172,7 @@ namespace VideoCapture
             }
         }
 
-        private void btn_filtre_duplicate_Click(object sender, MouseButtonEventArgs e)
+        private void btn_filtre_duplicate_Click(object sender, RoutedEventArgs e)
         {
             if (currentFilter == null) return;
 
@@ -180,7 +184,7 @@ namespace VideoCapture
             mainWindow.Filter_Update();
         }
 
-        private void btn_filtre_moveup_Click(object sender, MouseButtonEventArgs e)
+        private void btn_filtre_moveup_Click(object sender, RoutedEventArgs e)
         {
             if (currentFilter == null) return;
             int index = _ListFilters.IndexOf(currentFilter);
@@ -189,14 +193,18 @@ namespace VideoCapture
             mainWindow.Filter_Update();
         }
 
-        private void btn_filtre_movedown_Click(object sender, MouseButtonEventArgs e)
+        private void btn_filtre_movedown_Click(object sender, RoutedEventArgs e)
         {
             if (currentFilter == null) return;
             int index = _ListFilters.IndexOf(currentFilter);
             if (index >= _ListFilters.Count) return;
             _ListFilters.Move(index, index + 1);
             mainWindow.Filter_Update();
+        }
 
+        private void SetFilterPosition_Click(object sender, RoutedEventArgs e)
+        {
+            mainWindow.SetFilterPosition(currentFilter);
         }
     }
 }

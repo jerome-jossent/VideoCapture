@@ -5,12 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VideoCapture"
         xmlns:Standard_UC_JJO="clr-namespace:Standard_UC_JJO;assembly=Standard_UC_JJO"
-        mc:Ignorable="d"
-        Title="Filtre_Manager" Height="450" Width="900"
         xmlns:OpenCvSharp="clr-namespace:OpenCvSharp;assembly=OpenCvSharp"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"     
-        xmlns:xtended="http://schemas.xceed.com/wpf/xaml/toolkit" Closing="Window_Closing"
+        xmlns:xtended="http://schemas.xceed.com/wpf/xaml/toolkit"
         
+        mc:Ignorable="d" 
+        Closing="Window_Closing"
+        Title="Filtre_Manager" Height="450" Width="900"        
         >
 
     <Window.Resources>
@@ -22,18 +23,13 @@
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
 
-        <ObjectDataProvider x:Key="filterStaticFromEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+        <ObjectDataProvider x:Key="origineFromEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
             <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="local:Filtre_TXT+Filtre_TXT_Static_Type"/>
-            </ObjectDataProvider.MethodParameters>
-        </ObjectDataProvider>
-        <ObjectDataProvider x:Key="filterDynamicFromEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
-            <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="local:Filtre_TXT+Filtre_TXT_Dynamic_Type"/>
+                <x:Type TypeName="local:Filtre+TypeOrigine"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
     </Window.Resources>
-    
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
@@ -41,7 +37,7 @@
             <RowDefinition Height="130"/>
         </Grid.RowDefinitions>
 
-        
+
         <!-- MENU -->
         <Grid Grid.Row="0" >
             <Grid.ColumnDefinitions>
@@ -49,49 +45,65 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Height="40">
-                <Button Margin="2" VerticalContentAlignment="Center" Click="btn_add_image_click"
-                        Background="Transparent">
-                    <Button.Content>
-                        <StackPanel Orientation="Horizontal">
-                            <Image Margin="2" Source="/Resources/Plus.png" RenderOptions.BitmapScalingMode="Fant"/>
-                            <Label Content="Add Image" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button.Content>
-                </Button>
+            <Menu Grid.Column="0" Height="40" Background="Transparent">
+                <MenuItem>
+                    <MenuItem.Header>
+                        <Image Source="/Resources/Plus.png" RenderOptions.BitmapScalingMode="Fant"/>
+                    </MenuItem.Header>
 
-                <Button Margin="2" VerticalContentAlignment="Center" Click="btn_add_text_click"
-                        Background="Transparent">
-                    <Button.Content>
-                        <StackPanel Orientation="Horizontal">
-                            <Image Margin="2" Source="/Resources/Plus.png" RenderOptions.BitmapScalingMode="Fant"/>
-                            <Label Content="Add Text" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button.Content>
-                </Button>
-                
-                <Image Margin="2" Source="/Resources/Moins.png" MouseDown="btn_filtre_moins_Click" 
-                       IsEnabled="{Binding oneFiltreIsSelected}"
-                       ToolTip="Delete selected filter" RenderOptions.BitmapScalingMode="Fant"/>
-                
-                <Image Margin="2" Source="/Resources/clone.png" MouseDown="btn_filtre_duplicate_Click" 
-                       IsEnabled="{Binding oneFiltreIsSelected}"
-                       ToolTip="Clone selected filter" RenderOptions.BitmapScalingMode="Fant"/>
 
-                <Image Margin="2" Source="/Resources/arrow_up.png" MouseDown="btn_filtre_moveup_Click" 
-                       IsEnabled="{Binding oneFiltreIsSelected}"
-                       ToolTip="Move up selected filter" RenderOptions.BitmapScalingMode="Fant"/>
-                
-                <Image Margin="2" Source="/Resources/arrow_down.png" MouseDown="btn_filtre_movedown_Click" 
-                       IsEnabled="{Binding oneFiltreIsSelected}"
-                       ToolTip="Move down selected filter" RenderOptions.BitmapScalingMode="Fant"/>
+                    <MenuItem Click="btn_add_text_click" Header="Free"/>
+                    <MenuItem Click="btn_add_text_click" Header="DeviceName"/>
+                    <Separator/>
+                    <MenuItem Click="btn_add_text_click" Header="Date"/>
+                    <MenuItem Click="btn_add_text_click" Header="Time"/>
+                    <MenuItem Click="btn_add_text_click" Header="Time_ms"/>
+                    <MenuItem Click="btn_add_text_click" Header="Date_Time"/>
+                    <MenuItem Click="btn_add_text_click" Header="Date_Time_ms"/>
+                    <MenuItem Click="btn_add_text_click" Header="FrameNumber"/>
+                    <MenuItem Click="btn_add_text_click" Header="FPS"/>
 
-            </StackPanel>
+                </MenuItem>
 
-            <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal" Height="40">
-                <Image Source="/Resources/save.png" MouseDown="btn_filtre_save_Click" ToolTip="Save config filters" RenderOptions.BitmapScalingMode="Fant"/>
-                <Image Source="/Resources/load.png" MouseDown="btn_filtre_load_Click" ToolTip="Load config filters" RenderOptions.BitmapScalingMode="Fant"/>
-            </StackPanel>
+                <MenuItem Click="btn_filtre_moins_Click" ToolTip="Delete selected filter" IsEnabled="{Binding oneFiltreIsSelected}">
+                    <MenuItem.Header>
+                        <Image Source="/Resources/Moins.png" RenderOptions.BitmapScalingMode="Fant"/>
+                    </MenuItem.Header>
+                </MenuItem>
+
+                <MenuItem Click="btn_filtre_duplicate_Click" ToolTip="Clone selected filter" IsEnabled="{Binding oneFiltreIsSelected}">
+                    <MenuItem.Header>
+                        <Image Source="/Resources/clone.png" RenderOptions.BitmapScalingMode="Fant"/>
+                    </MenuItem.Header>
+                </MenuItem>
+
+                <MenuItem Click="btn_filtre_moveup_Click" ToolTip="Move up selected filter" IsEnabled="{Binding oneFiltreIsSelected}">
+                    <MenuItem.Header>
+                        <Image Source="/Resources/arrow_up.png" RenderOptions.BitmapScalingMode="Fant"/>
+                    </MenuItem.Header>
+                </MenuItem>
+
+                <MenuItem Click="btn_filtre_movedown_Click" ToolTip="Move down selected filter" IsEnabled="{Binding oneFiltreIsSelected}">
+                    <MenuItem.Header>
+                        <Image Source="/Resources/arrow_down.png" RenderOptions.BitmapScalingMode="Fant"/>
+                    </MenuItem.Header>
+                </MenuItem>
+
+            </Menu>
+
+            <Menu Grid.Column="1" Height="40" HorizontalAlignment="Right" Background="Transparent">
+                <MenuItem Click="btn_filtre_save_Click" ToolTip="Save config filters">
+                    <MenuItem.Header>
+                        <Image Source="/Resources/save.png" RenderOptions.BitmapScalingMode="Fant"/>
+                    </MenuItem.Header>
+                </MenuItem>
+
+                <MenuItem Click="btn_filtre_load_Click" ToolTip="Load config filters">
+                    <MenuItem.Header>
+                        <Image Source="/Resources/load.png" RenderOptions.BitmapScalingMode="Fant"/>
+                    </MenuItem.Header>
+                </MenuItem>
+            </Menu>
         </Grid>
 
         <!-- LIST -->
@@ -116,38 +128,6 @@
                     Visibility="{Binding Path=currentFilter.isTxt, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Converter={StaticResource BoolToVis}}"
                     >
 
-            
-            <!-- Texte Mode -->
-            <StackPanel Width="250" Orientation="Vertical" >
-
-                <StackPanel Margin="2">
-                    <CheckBox Content="Dynamic" IsChecked="{Binding currentFilter.Dynamic}" />
-
-
-                    <!--<RadioButton Content="Texte statique" Margin="2" IsChecked="{Binding currentFilter.Static}"/>
-                    <RadioButton Content="Texte dynamique" Margin="2"
-                                 IsChecked="{Binding currentFilter.Dynamic}"/>-->
-                </StackPanel>
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="70"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="50"/>
-                    </Grid.ColumnDefinitions>
-                    <Label Grid.Column="0"  Content="Mode"/>
-                    <ComboBox Grid.Column="1" Grid.ColumnSpan="2" Visibility="{Binding Path=currentFilter.Static, Converter={StaticResource BoolToVis}}"
-                              ItemsSource="{Binding Source={StaticResource filterStaticFromEnum}}"
-                              SelectedItem="{Binding Path=currentFilter.filtre_TXT_Static_Type}" />
-
-                    <ComboBox Grid.Column="1" Grid.ColumnSpan="2" Visibility="{Binding Path=currentFilter.Dynamic, Converter={StaticResource BoolToVis}}"
-                              ItemsSource="{Binding Source={StaticResource filterDynamicFromEnum}}"
-                              SelectedItem="{Binding Path=currentFilter.filtre_TXT_Dynamic_Type}" />
-                </Grid>                
-            </StackPanel>
-
-            <Grid Width="5"/>
-            
             <!-- Texte + font -->
             <StackPanel Width="250"  Orientation="Vertical" >
                 <TextBox Height="50" TextWrapping="NoWrap" 
@@ -209,6 +189,23 @@
 
             <Grid Width="5"/>
 
+            <!-- Origine -->
+            <Grid>
+                <StackPanel Orientation="Vertical">
+            
+        <StackPanel Orientation="Horizontal" Height="30" >
+                        <Label Content="Origine"/>
+                        <ComboBox ItemsSource="{Binding Source={StaticResource origineFromEnum}}"
+                              VerticalContentAlignment="Center" Width="100"
+                              SelectedItem="{Binding Path=currentFilter.origine, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                    </StackPanel>
+                    <Button Content="Set Position" Click="SetFilterPosition_Click"/>
+
+                </StackPanel>
+            </Grid>
+
+            <Grid Width="5"/>
+
             <!-- Position -->
             <Grid Width="150" >
                 <Grid.ColumnDefinitions>
@@ -236,7 +233,7 @@
                                       FormatString="F3" Minimum="0" Maximum="1" Increment="0.001" />
                 <Label Grid.Column="1"  Grid.Row="4" Content="Y"/>
             </Grid>
-            
+
         </StackPanel>
     </Grid>
 </Window>

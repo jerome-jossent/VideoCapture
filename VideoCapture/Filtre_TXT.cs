@@ -12,7 +12,7 @@ namespace VideoCapture
     {
         public new bool Dynamic
         {
-            get { return dynamic; }
+            get {return dynamic; }
             set
             {
                 dynamic = value;
@@ -35,38 +35,40 @@ namespace VideoCapture
         {
             get
             {
-                return Static && filtre_TXT_Static_Type == Filtre_TXT_Static_Type.Free;
+                return Static && filtre_TXT_Type == Filtre_TXT_Type.Free;
             }
         }
 
-        public enum Filtre_TXT_Static_Type { Free, DeviceName }
-        public enum Filtre_TXT_Dynamic_Type { Date, Time, Time_ms, Date_Time, Date_Time_ms, FrameNumber, FPS }
-
-        public Filtre_TXT_Static_Type filtre_TXT_Static_Type
+        public enum Filtre_TXT_Type { Free, DeviceName, Date, Time, Time_ms, Date_Time, Date_Time_ms, FrameNumber, FPS }
+        public Filtre_TXT_Type filtre_TXT_Type
         {
-            get { return _filtre_TXT_Static_Type; }
+            get { return _filtre_TXT_Type; }
             set
             {
-                _filtre_TXT_Static_Type = value;
-                UpdateTitle();
-                OnPropertyChanged("filtre_TXT_Static_Type");
-                OnPropertyChanged("Filtre_TXT_Static_Free");
-            }
-        }
-        Filtre_TXT_Static_Type _filtre_TXT_Static_Type;
+                _filtre_TXT_Type = value;
+                switch (filtre_TXT_Type)
+                {
+                    case Filtre_TXT_Type.Free:
+                    case Filtre_TXT_Type.DeviceName:
+                        Dynamic = false;
+                        break;
+                    case Filtre_TXT_Type.Date:
+                    case Filtre_TXT_Type.Time:
+                    case Filtre_TXT_Type.Time_ms:
+                    case Filtre_TXT_Type.Date_Time:
+                    case Filtre_TXT_Type.Date_Time_ms:
+                    case Filtre_TXT_Type.FrameNumber:
+                    case Filtre_TXT_Type.FPS:
+                        Dynamic = true;
 
-        public Filtre_TXT_Dynamic_Type filtre_TXT_Dynamic_Type
-        {
-            get { return _filtre_TXT_Dynamic_Type; }
-            set
-            {
-                _filtre_TXT_Dynamic_Type = value;
+                        break;
+                }
+
                 UpdateTitle();
-                OnPropertyChanged("filtre_TXT_Dynamic_Type");
-                OnPropertyChanged("Filtre_TXT_Static_Free");
+                OnPropertyChanged("filtre_TXT_Type");
             }
         }
-        Filtre_TXT_Dynamic_Type _filtre_TXT_Dynamic_Type;
+        Filtre_TXT_Type _filtre_TXT_Type;
 
         public string txt
         {
@@ -153,60 +155,34 @@ namespace VideoCapture
         public override void UpdateTitle()
         {
             string t = "";
-            if (Dynamic)
+            switch (filtre_TXT_Type)
             {
-
-                switch (filtre_TXT_Dynamic_Type)
-                {
-                    case Filtre_TXT_Dynamic_Type.Date:
-                        t = "Date";
-                        break;
-                    case Filtre_TXT_Dynamic_Type.Time:
-                        t = "Time";
-                        break;
-                    case Filtre_TXT_Dynamic_Type.Time_ms:
-                        t = "Time_ms";
-                        break;
-                    case Filtre_TXT_Dynamic_Type.Date_Time:
-                        t = "Date_Time";
-                        break;
-                    case Filtre_TXT_Dynamic_Type.Date_Time_ms:
-                        t = "Date_Time_ms";
-                        break;
-                    case Filtre_TXT_Dynamic_Type.FrameNumber:
-                        t = "FrameNumber";
-                        break;
-                    case Filtre_TXT_Dynamic_Type.FPS:
-                        t = "FPS";
-                        break;
-                }
+                case Filtre_TXT_Type.Free:
+                    t = txt;
+                    break;
+                case Filtre_TXT_Type.DeviceName:
+                case Filtre_TXT_Type.Date:
+                case Filtre_TXT_Type.Time:
+                case Filtre_TXT_Type.Time_ms:
+                case Filtre_TXT_Type.Date_Time:
+                case Filtre_TXT_Type.Date_Time_ms:
+                case Filtre_TXT_Type.FrameNumber:
+                case Filtre_TXT_Type.FPS:
+                    t = filtre_TXT_Type.ToString();
+                    break;
             }
-            else
-            {
-                switch (filtre_TXT_Static_Type)
-                {
-                    case Filtre_TXT_Static_Type.Free:
-                        t = txt;
-                        break;
-                    case Filtre_TXT_Static_Type.DeviceName:
-                        t = "DeviceName";
-                        break;
-                }
-            }
-
+            string o = origine.ToString();
             title = "xy(" +
                 X.ToString("0.000") +
                 "|" +
                 Y.ToString("0.000") +
-                ")\t" +
+                ") " +
+                new String(o.Where(c => char.IsUpper(c)).ToArray())
+                 +                
+                "\t" +
                 color.ToString() +
                 (Dynamic ? "\t[D] " : "\t[S] ") +
                 t;
         }
-
-        //public override object Clone()
-        //{
-        //    return this.Clone();
-        //}
     }
 }

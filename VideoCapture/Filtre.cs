@@ -27,6 +27,7 @@ namespace VideoCapture
             {
                 _origine = value;
                 OnPropertyChanged("origine");
+                UpdateTitle();
             }
         }
         TypeOrigine _origine;

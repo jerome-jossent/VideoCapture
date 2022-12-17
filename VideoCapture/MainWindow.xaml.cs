@@ -90,6 +90,11 @@ namespace VideoCapture
         bool forceResize;
         double WindowsScreenScale;
         Filtre_Manager filtre_manager;
+        Filtre currentFilter;
+
+        [System.Runtime.InteropServices.DllImport("User32.dll")]
+        private static extern bool SetCursorPos(int X, int Y);
+
 
         #region VARIABLES BINDINGS
         public event PropertyChangedEventHandler PropertyChanged;
@@ -162,6 +167,7 @@ namespace VideoCapture
             {
                 HideMenu = value;
                 OnPropertyChanged("_HideMenu");
+                if (filterPositionning) return;
 
                 Properties.Settings.Default.HideMenu = _HideMenu;
                 Properties.Settings.Default.Save();
@@ -241,6 +247,7 @@ namespace VideoCapture
                 OnPropertyChanged("ScreenshotFolder");
             }
         }
+
         string screenshotFile_Last = "";
 
         public string ScreenshotCount
@@ -287,20 +294,36 @@ namespace VideoCapture
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
-            if (forceResize) return;
+            if (WindowsScreenScale == 0) return;
+            if (format == null) return;
+
+
+
+            frame_ratio = (double)format.w / format.h;
 
             if (sizeInfo.WidthChanged)
-                this.Width = sizeInfo.NewSize.Height * frame_ratio;
+            {
+                Width = Width - image.Width + (sizeInfo.NewSize.Height * frame_ratio);
+                //Width = image.ActualWidth;
+            }
             else
-                this.Height = sizeInfo.NewSize.Width / frame_ratio;
-
-            actualWidth = this.Width;
+            {
+                Height = Height - image.Height + (sizeInfo.NewSize.Width / frame_ratio);
+            }
         }
 
         void img_mousedown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left)
-                this.DragMove();
+            if (filterPositionning)
+            {
+                _HideMenu = _HideMenu_previousstatus;
+                filterPositionning = false;
+            }
+            else
+            {
+                if (e.ChangedButton == MouseButton.Left)
+                    this.DragMove();
+            }
         }
 
         void MouseEnterEventDelay_Init()
@@ -321,6 +344,17 @@ namespace VideoCapture
 
         void Window_MouseMove(object sender, MouseEventArgs e)
         {
+            if (filterPositionning)
+            {
+                System.Windows.Point GetMousePos = Mouse.GetPosition(this);
+
+                currentFilter.X = (GetMousePos.X) / (ActualWidth);
+                currentFilter.Y = (GetMousePos.Y) / (ActualHeight);
+                UpdateFilers();
+
+                return;
+            }
+
             if (!_HideMenu)
             {
                 grd_visu.Visibility = Visibility.Visible;
@@ -695,6 +729,10 @@ namespace VideoCapture
                         actualWidth = format.w;
                         Application.Current.Dispatcher.Invoke(() => { Width = actualWidth; });
 
+                        capture.Read(frame);
+
+                        Filter_Update();
+
                         newFormat = false;
                     }
 
@@ -723,74 +761,94 @@ namespace VideoCapture
         {
             while (isRunningFiltre)
             {
-                if (filtres.Count > 0)
+                try
                 {
-                    Mat f;
-                    if (!filterframe.Empty())
-                        f = filterframe.Clone();
-                    else
-                        f = new Mat(frame.Size(), MatType.CV_8UC4);
-
-                    if (filtres_aumoins1dynamic)
+                    if (filtres.Count > 0)
                     {
-                        foreach (Filtre filtre in filtres)
+                        Mat f;
+                        if (!filterframe.Empty())
+                            f = filterframe.Clone();
+                        else
+                            f = new Mat(frame.Size(), MatType.CV_8UC4);
+
+                        if (filtres_aumoins1dynamic)
                         {
-                            if (filtre.Dynamic && filtre.enable)
+                            foreach (Filtre filtre in filtres)
                             {
-                                OpenCvSharp.Point p = new OpenCvSharp.Point(filtre.X * filterframe.Width, filtre.Y * filterframe.Height);
-                                switch (filtre._type)
+                                if (filtre.Dynamic && filtre.enable)
                                 {
-                                    case Filtre.FiltreType.texte:
-                                        Filtre_TXT ft = (Filtre_TXT)filtre;
+                                    OpenCvSharp.Point p = new OpenCvSharp.Point(filtre.X * filterframe.Width, filtre.Y * filterframe.Height);
+                                    switch (filtre._type)
+                                    {
+                                        case Filtre.FiltreType.texte:
+                                            Filtre_TXT ft = (Filtre_TXT)filtre;
 
-                                        Scalar ftcolor = new Scalar(ft.color.B, ft.color.G, ft.color.R, ft.color.A);
-                                        string txt = "";
-                                        switch (ft.filtre_TXT_Dynamic_Type)
-                                        {
-                                            case Filtre_TXT.Filtre_TXT_Dynamic_Type.Date:
-                                                txt = DateTime.Now.ToString("yyyy-MM-dd");
-                                                break;
-                                            case Filtre_TXT.Filtre_TXT_Dynamic_Type.Time:
-                                                txt = DateTime.Now.ToString("HH:mm:ss");
-                                                break;
-                                            case Filtre_TXT.Filtre_TXT_Dynamic_Type.Time_ms:
-                                                txt = DateTime.Now.ToString("HH:mm:ss.fff");
-                                                break;
-                                            case Filtre_TXT.Filtre_TXT_Dynamic_Type.Date_Time:
-                                                txt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                                                break;
-                                            case Filtre_TXT.Filtre_TXT_Dynamic_Type.Date_Time_ms:
-                                                txt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-                                                break;
-                                            case Filtre_TXT.Filtre_TXT_Dynamic_Type.FrameNumber:
-                                                txt = framereallygrabbed.ToString();
-                                                break;
-                                            case Filtre_TXT.Filtre_TXT_Dynamic_Type.FPS:
-                                                txt = _FPS.ToString("f2");
-                                                break;
-                                        }
+                                            Scalar ftcolor = new Scalar(ft.color.B, ft.color.G, ft.color.R, ft.color.A);
+                                            string txt = "";
+                                            switch (ft.filtre_TXT_Type)
+                                            {
+                                                case Filtre_TXT.Filtre_TXT_Type.Date:
+                                                    txt = DateTime.Now.ToString("yyyy-MM-dd");
+                                                    break;
+                                                case Filtre_TXT.Filtre_TXT_Type.Time:
+                                                    txt = DateTime.Now.ToString("HH:mm:ss");
+                                                    break;
+                                                case Filtre_TXT.Filtre_TXT_Type.Time_ms:
+                                                    txt = DateTime.Now.ToString("HH:mm:ss.fff");
+                                                    break;
+                                                case Filtre_TXT.Filtre_TXT_Type.Date_Time:
+                                                    txt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                                                    break;
+                                                case Filtre_TXT.Filtre_TXT_Type.Date_Time_ms:
+                                                    txt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                                                    break;
+                                                case Filtre_TXT.Filtre_TXT_Type.FrameNumber:
+                                                    txt = framereallygrabbed.ToString();
+                                                    break;
+                                                case Filtre_TXT.Filtre_TXT_Type.FPS:
+                                                    txt = _FPS.ToString("f2");
+                                                    break;
+                                            }
 
-                                        OpenCvSharp.Size textsize = Cv2.GetTextSize(txt, ft.font, ft.FontScale, ft.FontThickness, out int Y_baseline);
+                                            OpenCvSharp.Size textsize = Cv2.GetTextSize(txt, ft.font, ft.FontScale, ft.FontThickness, out int Y_baseline);
 
-                                        Cv2.PutText(f, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
-                                        break;
+                                            switch (ft.origine)
+                                            {
+                                                case Filtre.TypeOrigine.UpLeft:         p.Y += textsize.Height; break;
+                                                case Filtre.TypeOrigine.UpMiddle:       p.Y += textsize.Height; p.X -= textsize.Width / 2; break;
+                                                case Filtre.TypeOrigine.UpRight:        p.Y += textsize.Height; p.X -= textsize.Width; break;
+                                                case Filtre.TypeOrigine.MiddleLeft:     p.Y += textsize.Height / 2; break;
+                                                case Filtre.TypeOrigine.Middle:         p.Y += textsize.Height / 2; p.X -= textsize.Width / 2; break;
+                                                case Filtre.TypeOrigine.MiddleRight:    p.Y += textsize.Height / 2; p.X -= textsize.Width; break;
+                                                case Filtre.TypeOrigine.DownLeft: break;
+                                                case Filtre.TypeOrigine.DownMiddle:     p.X -= textsize.Width / 2; break;
+                                                case Filtre.TypeOrigine.DownRight:      p.X -= textsize.Width; break;
+                                            }
 
-                                    case Filtre.FiltreType.image:
+                                            Cv2.PutText(f, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                                            break;
 
-                                        break;
+                                        case Filtre.FiltreType.image:
+
+                                            break;
+                                    }
                                 }
                             }
                         }
+                        if (!f.Empty())
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(f));
+                            });
                     }
-                    if (!f.Empty())
-                        Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(f));
-                        });
-                }
 
-                if (_FPS > 0)
-                    Thread.Sleep((int)(1000 / _FPS));
+                    if (_FPS > 0)
+                        Thread.Sleep((int)(1000 / _FPS));
+                }
+                catch (Exception ex)
+                {
+
+                }
             }
         }
         #endregion
@@ -803,7 +861,7 @@ namespace VideoCapture
                 Mat frameShowed;
 
 
-                if (actualWidth < frame.Width)
+                if (actualWidth < frame.Width && actualWidth > 0)
                 {
                     frameShowed = new Mat();
                     Cv2.Resize(frame, frameShowed, new OpenCvSharp.Size(actualWidth, actualWidth / frame.Width * frame.Height), interpolation: InterpolationFlags.Cubic);
@@ -1114,70 +1172,96 @@ namespace VideoCapture
 
         public void Filter_Update()
         {
-            filterframe = new Mat(frame.Size(), MatType.CV_8UC4);
-            filtres_aumoins1dynamic = false;
-            foreach (Filtre f in filtres)
+            if (frame == null || frame.Empty())
+                return;
+            try
             {
-                if (!f.enable)
-                    continue;
-
-                OpenCvSharp.Point p = new OpenCvSharp.Point(f.X * filterframe.Width, f.Y * filterframe.Height);
-
-                switch (f._type)
+                filterframe = new Mat(frame.Size(), MatType.CV_8UC4);
+                filtres_aumoins1dynamic = false;
+                foreach (Filtre f in filtres)
                 {
-                    case Filtre.FiltreType.texte:
-                        Filtre_TXT ft = (Filtre_TXT)f;
-                        if (ft.Static)
-                        {
-                            Scalar ftcolor = new Scalar(ft.color.B, ft.color.G, ft.color.R, ft.color.A);
-                            string txt = "";
-                            switch (ft.filtre_TXT_Static_Type)
+                    if (!f.enable)
+                        continue;
+
+                    OpenCvSharp.Point p = new OpenCvSharp.Point(f.X * filterframe.Width, f.Y * filterframe.Height);
+
+                    switch (f._type)
+                    {
+                        case Filtre.FiltreType.texte:
+                            Filtre_TXT ft = (Filtre_TXT)f;
+                            if (ft.Static)
                             {
-                                case Filtre_TXT.Filtre_TXT_Static_Type.Free:
-                                    if (ft.txt == null || ft.txt == "")
-                                        continue;
+                                Scalar ftcolor = new Scalar(ft.color.B, ft.color.G, ft.color.R, ft.color.A);
+                                string txt = "";
+                                switch (ft.filtre_TXT_Type)
+                                {
+                                    case Filtre_TXT.Filtre_TXT_Type.Free:
+                                        if (ft.txt == null || ft.txt == "")
+                                            continue;
 
-                                    txt = ft.txt;
-                                    break;
-                                case Filtre_TXT.Filtre_TXT_Static_Type.DeviceName:
-                                    txt = current_device.Name;
-                                    break;
-                                default:
-                                    break;
+                                        txt = ft.txt;
+                                        break;
+                                    case Filtre_TXT.Filtre_TXT_Type.DeviceName:
+                                        txt = current_device.Name;
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                OpenCvSharp.Size textsize = Cv2.GetTextSize(txt, ft.font, ft.FontScale, ft.FontThickness, out int Y_baseline);
+
+                                switch (ft.origine)
+                                {
+                                    case Filtre.TypeOrigine.UpLeft: p.Y += textsize.Height; break;
+                                    case Filtre.TypeOrigine.UpMiddle: p.Y += textsize.Height; p.X -= textsize.Width / 2; break;
+                                    case Filtre.TypeOrigine.UpRight: p.Y += textsize.Height; p.X -= textsize.Width; break;
+                                    case Filtre.TypeOrigine.MiddleLeft: p.Y += textsize.Height / 2; break;
+                                    case Filtre.TypeOrigine.Middle: p.Y += textsize.Height / 2; p.X -= textsize.Width / 2; break;
+                                    case Filtre.TypeOrigine.MiddleRight: p.Y += textsize.Height / 2; p.X -= textsize.Width; break;
+                                    case Filtre.TypeOrigine.DownLeft: break;
+                                    case Filtre.TypeOrigine.DownMiddle: p.X -= textsize.Width / 2; break;
+                                    case Filtre.TypeOrigine.DownRight: p.X -= textsize.Width; break;
+                                }
+
+                                Cv2.PutText(filterframe, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
                             }
-                            Cv2.PutText(filterframe, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
-                        }
-                        if (ft.Dynamic)
-                        {
-                            filtres_aumoins1dynamic = true;
-                        }
+                            if (ft.Dynamic)
+                            {
+                                filtres_aumoins1dynamic = true;
+                            }
 
-                        break;
+                            break;
 
-                    case Filtre.FiltreType.image:
+                        case Filtre.FiltreType.image:
 
-                        break;
+                            break;
+                    }
                 }
             }
+            catch (Exception ex)
+            {
 
-            //Cv2.NamedWindow("bob");
-            //Cv2.ImShow("bob", frame);
-            //Cv2.NamedWindow("bib");
-            //Cv2.ImShow("bib", filterframe);
-            //filterframe.SaveImage("d:\\test.png");
-
-
-
-
-            ////////////////if (!filterframe.Empty())
-            ////////////////    Application.Current.Dispatcher.Invoke(() =>
-            ////////////////    {
-            ////////////////        imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe));
-            ////////////////    });
-
-
-            //_imageCalque = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe);
+            }
         }
+
+        bool filterPositionning = false;
+        bool _HideMenu_previousstatus;
+
+        public void SetFilterPosition(Filtre currentFilter)
+        {
+            this.currentFilter = currentFilter;
+            //positionner la souris sur la video
+            double x = WindowsScreenScale * (this.Left + currentFilter.X * ActualWidth);
+            double y = WindowsScreenScale * (this.Top + currentFilter.Y * ActualHeight);
+            SetCursorPos((int)x, (int)y);
+
+
+            _HideMenu_previousstatus = _HideMenu;
+            _HideMenu = false;
+            filterPositionning = true;
+            this.Activate();
+        }
+
+
         #endregion
 
         #region DPI
