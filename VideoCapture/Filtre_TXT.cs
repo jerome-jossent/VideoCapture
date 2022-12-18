@@ -82,6 +82,7 @@ namespace VideoCapture
         }
         string _txt;
 
+        #region POLICE
         public OpenCvSharp.HersheyFonts font
         {
             get { return _font; }
@@ -135,16 +136,21 @@ namespace VideoCapture
             get { return _color; }
             set
             {
+                if (_color == value) return;
+
                 byte a = (byte)(alpha * 255);
                 _color = Color.FromArgb(a, value.R, value.G, value.B);
-                UpdateTitle();
+
                 OnPropertyChanged("color");
+
+                UpdateTitle();
             }
         }
         Color _color = Colors.White;
 
+        #endregion
 
-
+        #region BORDURE
         public bool Border
         {
             get { return border; }
@@ -188,16 +194,19 @@ namespace VideoCapture
             get { return _color_Border; }
             set
             {
+                if (_color_Border == value) return;
+
                 byte a = (byte)(alpha_Border * 255);
                 _color_Border = Color.FromArgb(a, value.R, value.G, value.B);
+
                 OnPropertyChanged("color_Border");
+
                 UpdateTitle();
             }
         }
         Color _color_Border = Colors.Black;
 
-
-
+        #endregion
 
 
 
@@ -235,10 +244,7 @@ namespace VideoCapture
                 "|" +
                 Y.ToString("0.000") +
                 ") " +
-                new String(o.Where(c => char.IsUpper(c)).ToArray())
-                 +
-                //"\t" +                color.ToString() +
-                //((Border) ? "\t" + color_Border.ToString() : "") +
+                new String(o.Where(c => char.IsUpper(c)).ToArray()) +
                 (Dynamic ? "\t[D] " : "\t[S] ") +
                 t;
         }

@@ -13,91 +13,70 @@ using System.IO;
 using System.Collections.ObjectModel;
 using Newtonsoft.Json;
 
-// Disable Dpi awareness in the application assembly.
-//[assembly: System.Windows.Media.DisableDpiAwareness]
-
 namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
     {
+        const string version = "version 2022/12/18";
+
+        #region VARIABLES & PARAMETERS
+
         bool AUTORELOAD = true;
+
         bool configLoading = false;
         CameraConfiguration cameraConfiguration = null;
 
-        const string version = "version 2022/12/05";
-
         string fichier_config = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\config.json";
         string fichier_filtres = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\filtres.json";
+        Dictionary<string, CameraConfiguration> CONFIGURATIONS = new Dictionary<string, CameraConfiguration>();
+        Dictionary<string, ObservableCollection<Filtre>> FILTRES = new Dictionary<string, ObservableCollection<Filtre>>();
 
+        // CAMERA
+        Thread threadCapture;
+        bool isRunning = false;
+        DirectShowLib.DsDevice[] devices;
+        DirectShowLib.DsDevice current_device;
+        string deviceName;
+        int indexDevice;
+        Dictionary<string, VideoInInfo.Format> formats;
+        OpenCvSharp.VideoCapture capture;
+        VideoInInfo.Format format;
+        bool newFormat;
+        string formatName;
 
-        #region VARIABLES & PARAMETERS
+        // Image capturée
+        Mat frame;
+        long framereallygrabbed = 0;
+        double frame_ratio = 3;
+        double actualWidth;
+        // flips & rotations
+        bool flip_h;
+        bool flip_v;
+        RotateFlags? rotation;
+        // region of interest (crop)
+        OpenCvSharp.Rect roi = new OpenCvSharp.Rect();
+        bool roi_enabled = false;
+
         // FPS
         long T0;
         System.Diagnostics.Stopwatch chrono = new System.Diagnostics.Stopwatch();
 
-        // Image capturée
-        Mat frame;
-        double frame_ratio = 3;
-        double actualWidth;
-
-        bool flip_h;
-        bool flip_v;
-        RotateFlags? rotation;
-
-        // Filtres         
-        public ObservableCollection<Filtre> filtres
-        {
-            get { return __filtres; }
-            set
-            {
-                __filtres = value;
-                OnPropertyChanged("filtres");
-            }
-        }
-        ObservableCollection<Filtre> __filtres = new ObservableCollection<Filtre>();
+        // Filtre
+        Thread threadFiltre;
+        bool isRunningFiltre = false;
+        Filtre_Manager filtre_manager;
+        Filtre currentFilter;
+        Mat filterframe;
         bool filtres_aumoins1dynamic;
-
         Dictionary<string, MenuItem> _filtres;
         string dossierFiltres = AppDomain.CurrentDomain.BaseDirectory + "Filters";
         string filtername;
 
-        Mat filterframe;
-        Mat frame_augmentation;
-
-        //region of interest (crop)
-        OpenCvSharp.Rect roi = new OpenCvSharp.Rect();
-        bool roi_enabled = false;
-
-        // CAMERA
-        Thread threadCapture;
-        Thread threadFiltre;
-        int indexDevice;
-        VideoInInfo.Format format;
-        private bool newFormat;
-        private string deviceName;
-        private string formatName;
-        Dictionary<string, VideoInInfo.Format> formats;
-        OpenCvSharp.VideoCapture capture;
-        bool isRunning = false;
-        bool isRunningFiltre = false;
-
+        // Fenêtre
         System.Windows.Threading.DispatcherTimer mouseEnterEventDelayTimer = new System.Windows.Threading.DispatcherTimer();
         double MouseEnter_Delay_sec = 3;
-        long framegrabbed = 0;
-        long framereallygrabbed = 0;
-        #endregion
-
-        DirectShowLib.DsDevice[] devices;
-        DirectShowLib.DsDevice current_device;
-
-        bool forceResize;
         double WindowsScreenScale;
-        Filtre_Manager filtre_manager;
-        Filtre currentFilter;
-
-        [System.Runtime.InteropServices.DllImport("User32.dll")]
-        private static extern bool SetCursorPos(int X, int Y);
-
+        [System.Runtime.InteropServices.DllImport("User32.dll")] static extern bool SetCursorPos(int X, int Y);
 
         #region VARIABLES BINDINGS
         public event PropertyChangedEventHandler PropertyChanged;
@@ -123,7 +102,6 @@ namespace VideoCapture
             }
         }
         string fps;
-
         float _FPS;
 
         public string _Infos
@@ -177,7 +155,6 @@ namespace VideoCapture
             }
         }
         bool HideMenu = Properties.Settings.Default.HideMenu;
-
 
         public bool _fullScreen
         {
@@ -233,6 +210,18 @@ namespace VideoCapture
             }
         }
 
+        // Filtres         
+        public ObservableCollection<Filtre> filtres
+        {
+            get { return __filtres; }
+            set
+            {
+                __filtres = value;
+                OnPropertyChanged("filtres");
+            }
+        }
+        ObservableCollection<Filtre> __filtres = new ObservableCollection<Filtre>();
+
         public string ScreenshotFolder
         {
             get
@@ -250,7 +239,6 @@ namespace VideoCapture
                 OnPropertyChanged("ScreenshotFolder");
             }
         }
-
         string screenshotFile_Last = "";
 
         public string ScreenshotCount
@@ -276,6 +264,8 @@ namespace VideoCapture
         int screenshot_Count = 0;
 
         System.Drawing.Bitmap imageCalque;
+        #endregion
+
         #endregion
 
         #region WINDOW MANAGEMENT
@@ -415,11 +405,9 @@ namespace VideoCapture
         {
             if (frame != null && !frame.Empty())
             {
-                forceResize = true;
                 Width = frame.Width;
                 Height = frame.Height;
                 actualWidth = Width;
-                forceResize = false;
             }
         }
 
@@ -450,16 +438,6 @@ namespace VideoCapture
         }
         #endregion
 
-        void QUIT()
-        {
-            isRunning = false;
-            CaptureCameraStop();
-            FiltreCameraStop();
-
-            if (filtre_manager != null)
-                filtre_manager.ReallyClose();
-        }
-
         void INITS()
         {
             ListDevices();
@@ -479,87 +457,15 @@ namespace VideoCapture
             }
         }
 
-        #region SCREENSHOT
-        void Screenshot_Click(object sender, MouseButtonEventArgs e)
+        void QUIT()
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
-                Screenshot();
+            isRunning = false;
+            CaptureCameraStop();
+            FiltreCameraStop();
 
-            if (e.RightButton == MouseButtonState.Pressed)
-                Open_ScreenshotFolder();
+            if (filtre_manager != null)
+                filtre_manager.ReallyClose();
         }
-
-        void Window_KeyDown(object sender, KeyEventArgs e)
-        {
-            switch (e.Key)
-            {
-                case Key.Space:
-                    Screenshot();
-                    break;
-            }
-        }
-
-        void Screenshot()
-        {
-            if (ScreenshotFolder != null && System.IO.Directory.Exists(ScreenshotFolder))
-                if (frame != null && !frame.Empty())
-                {
-                    Mat screenshot = null;
-                    if (ckb_savewithfilter.IsChecked == true && !filterframe.Empty())
-                    {
-
-                        throw new Exception("TODO");
-                        //frame
-                        //filterframe
-
-                        //screenshot
-                    }
-                    else
-                    {
-                        screenshot = frame.Clone();
-                    }
-                    string extension = ".jpg";
-                    string filename = ScreenshotFolder + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss.fff") + extension;
-                    screenshot.SaveImage(filename);
-                    screenshotCount++;
-                    screenshotFile_Last = filename;
-                }
-        }
-
-        void ScreenshotFolder_Click(object sender, MouseButtonEventArgs e)
-        {
-            if (e.LeftButton == MouseButtonState.Pressed)
-                Set_ScreenshotFolder();
-
-            if (e.RightButton == MouseButtonState.Pressed)
-                Open_ScreenshotFolder();
-        }
-
-        void Open_ScreenshotFolder()
-        {
-            if (Directory.Exists(ScreenshotFolder))
-            {
-                if (File.Exists(screenshotFile_Last))
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", "/select, \"" + screenshotFile_Last + "\""));
-                else
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", ScreenshotFolder));
-            }
-        }
-
-        void Set_ScreenshotFolder()
-        {
-            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
-            {
-                if (ScreenshotFolder != null)
-                    dialog.SelectedPath = ScreenshotFolder;
-                System.Windows.Forms.DialogResult result = dialog.ShowDialog();
-                if (result == System.Windows.Forms.DialogResult.OK)
-                {
-                    ScreenshotFolder = dialog.SelectedPath;
-                }
-            }
-        }
-        #endregion
 
         #region DEVICES MANAGEMENT
         private void AllDevices_Click(object sender, MouseButtonEventArgs e)
@@ -602,12 +508,27 @@ namespace VideoCapture
             deviceName = cbx_device.Items[cbx_device.SelectedIndex].ToString();
             OnPropertyChanged("_title");
 
-            //set default format
-            cbx_deviceFormat.SelectedIndex = 0;
-            //newFormat = true;
+            if (CONFIGURATIONS.ContainsKey(deviceName))
+            {
+                cbx_deviceFormat.SelectedValue = CONFIGURATIONS[deviceName].format;
+                LoadConfiguration();
+            }
+            else
+            {
+                //set default format
+                cbx_deviceFormat.SelectedIndex = 0;
+
+                CONFIGURATIONS.Add(deviceName, cameraConfiguration);
+            }
+            cameraConfiguration = CONFIGURATIONS[deviceName];
+
+            if (FILTRES.ContainsKey(deviceName))
+            {
+                LoadFiltres();
+            }
         }
 
-        private void Combobox_CaptureDeviceFormat_Change(object sender, SelectionChangedEventArgs e)
+        void Combobox_CaptureDeviceFormat_Change(object sender, SelectionChangedEventArgs e)
         {
             if (cbx_deviceFormat.SelectedValue == null)
                 return;
@@ -615,6 +536,8 @@ namespace VideoCapture
             format = formats[cbx_deviceFormat.SelectedValue as string];
             formatName = cbx_deviceFormat.Items[cbx_deviceFormat.SelectedIndex].ToString();
             OnPropertyChanged("_title");
+
+            cameraConfiguration = new CameraConfiguration(deviceName, format, ActualWidth, ActualHeight);
 
             if (!isRunning)
                 Play();
@@ -703,7 +626,6 @@ namespace VideoCapture
                     newFormat = false;
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        forceResize = true;
                         Width = cameraConfiguration.width;
                         Height = cameraConfiguration.height;
                         configLoading = false;
@@ -740,7 +662,6 @@ namespace VideoCapture
                     }
 
                     capture.Read(frame);
-                    framegrabbed++;
 
                     if (!frame.Empty())
                     {
@@ -1309,6 +1230,88 @@ namespace VideoCapture
 
         #endregion
 
+        #region SCREENSHOT
+        void Screenshot_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+                Screenshot();
+
+            if (e.RightButton == MouseButtonState.Pressed)
+                Open_ScreenshotFolder();
+        }
+
+        void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            switch (e.Key)
+            {
+                case Key.Space:
+                    Screenshot();
+                    break;
+            }
+        }
+
+        void Screenshot()
+        {
+            if (ScreenshotFolder != null && System.IO.Directory.Exists(ScreenshotFolder))
+                if (frame != null && !frame.Empty())
+                {
+                    Mat screenshot = null;
+                    if (ckb_savewithfilter.IsChecked == true && !filterframe.Empty())
+                    {
+
+                        throw new Exception("TODO");
+                        //frame
+                        //filterframe
+
+                        //screenshot
+                    }
+                    else
+                    {
+                        screenshot = frame.Clone();
+                    }
+                    string extension = ".jpg";
+                    string filename = ScreenshotFolder + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss.fff") + extension;
+                    screenshot.SaveImage(filename);
+                    screenshotCount++;
+                    screenshotFile_Last = filename;
+                }
+        }
+
+        void ScreenshotFolder_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+                Set_ScreenshotFolder();
+
+            if (e.RightButton == MouseButtonState.Pressed)
+                Open_ScreenshotFolder();
+        }
+
+        void Open_ScreenshotFolder()
+        {
+            if (Directory.Exists(ScreenshotFolder))
+            {
+                if (File.Exists(screenshotFile_Last))
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", "/select, \"" + screenshotFile_Last + "\""));
+                else
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", ScreenshotFolder));
+            }
+        }
+
+        void Set_ScreenshotFolder()
+        {
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                if (ScreenshotFolder != null)
+                    dialog.SelectedPath = ScreenshotFolder;
+                System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    ScreenshotFolder = dialog.SelectedPath;
+                }
+            }
+        }
+        #endregion
+
         #region DPI
 
 
@@ -1468,64 +1471,80 @@ namespace VideoCapture
         }
         #endregion
 
-        #region SAVE/LOAD
+        #region SAVE/LOAD   CONFIG & FILTRES
+
+        #region CONFIG
         private void Save_Click(object sender, MouseButtonEventArgs e) { Config_Save(); }
         private void Load_Click(object sender, MouseButtonEventArgs e) { Config_Load(); }
 
         void Config_Save()
         {
-            CameraConfiguration cc = new CameraConfiguration(deviceName, cbx_deviceFormat.SelectedValue as string, (int)ActualWidth, (int)ActualHeight);
-            string txt = cc.ToString();
+            cameraConfiguration = new CameraConfiguration(deviceName, format, ActualWidth, ActualHeight);
+            CONFIGURATIONS[deviceName] = cameraConfiguration;
 
-            File.WriteAllText(fichier_config, txt);
-            //Properties.Settings.Default.config = txt;
-            //Properties.Settings.Default.Save();
+            string json = JsonConvert.SerializeObject(CONFIGURATIONS, Formatting.Indented, new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All });
+            File.WriteAllText(fichier_config, json);
         }
 
         void Config_Load()
         {
-            //string txt = Properties.Settings.Default.config;
-            string txt = System.IO.File.Exists(fichier_config)?File.ReadAllText(fichier_config):null;
-            if (txt == null || txt == "")
+            string json = File.Exists(fichier_config) ? File.ReadAllText(fichier_config) : null;
+            if (json == null || json == "")
                 return;
 
-            cameraConfiguration = new CameraConfiguration(txt);
-
-            cbx_device.SelectedValue = cameraConfiguration.deviceName;
-            Thread.Sleep(100);
-            cbx_deviceFormat.SelectedValue = cameraConfiguration.format;
-            configLoading = true;
+            CONFIGURATIONS = (Dictionary<string, CameraConfiguration>)JsonConvert.DeserializeObject(json, new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All });
+            LoadConfiguration();
         }
+        void LoadConfiguration()
+        {
+            if (deviceName != null && CONFIGURATIONS.ContainsKey(deviceName))
+            {
+                cameraConfiguration = CONFIGURATIONS[deviceName];
 
+                cbx_device.SelectedValue = cameraConfiguration.deviceName;
+                Thread.Sleep(100);
+                cbx_deviceFormat.SelectedValue = cameraConfiguration.format.Name;
+                configLoading = true;
+            }
+        }
+        #endregion
+
+        #region FITLRES
         public void Config_Filters_Save()
         {
-            var jset = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
-            string json = JsonConvert.SerializeObject(filtres, Formatting.Indented, jset);
-
+            string json = JsonConvert.SerializeObject(FILTRES, Formatting.Indented, new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All });
             File.WriteAllText(fichier_filtres, json);
-            //Properties.Settings.Default.filters = json;
-            //Properties.Settings.Default.Save();
         }
 
         public void Config_Filters_Load()
         {
-            //string json = Properties.Settings.Default.filters;
-            string json = System.IO.File.Exists(fichier_filtres) ? File.ReadAllText(fichier_filtres) : null;
+            string json = File.Exists(fichier_filtres) ? File.ReadAllText(fichier_filtres) : null;
             if (json == null || json == "")
                 return;
 
-            var jset = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
-            ObservableCollection<Filtre> c = (ObservableCollection<Filtre>)JsonConvert.DeserializeObject(json, jset);
-            filtres = c;
-
-            filtres_aumoins1dynamic = false;
-            foreach (Filtre item in filtres)
-            {
-                item.PropertyChanged += filtre_manager.FilterPropertyChanged;
-                if (item.isTxt && ((Filtre_TXT)item).Dynamic)
-                    filtres_aumoins1dynamic = true;
-            }
+            FILTRES = (Dictionary<string, ObservableCollection<Filtre>>)JsonConvert.DeserializeObject(json, new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All });
+            LoadFiltres();
         }
+
+        void LoadFiltres()
+        {
+            if (deviceName != null && FILTRES.ContainsKey(deviceName))
+            {
+                filtres = FILTRES[deviceName];
+
+                filtres_aumoins1dynamic = false;
+                foreach (Filtre item in filtres)
+                {
+                    item.PropertyChanged += filtre_manager.FilterPropertyChanged;
+
+                    if (item.isTxt && ((Filtre_TXT)item).Dynamic)
+                        filtres_aumoins1dynamic = true;
+                }
+            }
+            filtre_manager._ListFiltersUpdate();
+        }
+        #endregion
+
         #endregion
     }
 }

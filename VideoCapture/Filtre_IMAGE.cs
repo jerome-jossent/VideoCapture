@@ -8,7 +8,6 @@ namespace VideoCapture
 {
     public class Filtre_IMAGE : Filtre
     {
-
         public double W
         {
             get { return w; }
@@ -48,9 +47,5 @@ namespace VideoCapture
         {
             title = "Filtre_IMAGE";
         }
-        //public override object Clone()
-        //{
-        //    return this.Clone();
-        //}
     }
 }

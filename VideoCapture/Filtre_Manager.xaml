@@ -125,7 +125,7 @@
 
         <!-- FORMULAIRE TEXTE -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" 
-                    Visibility="{Binding Path=currentFilter.isTxt, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Converter={StaticResource BoolToVis}}"
+                    Visibility="{Binding gridTXT, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                     >
 
             <!-- Texte + font -->
@@ -167,7 +167,6 @@
                         <ColumnDefinition Width="50"/>
                     </Grid.ColumnDefinitions>
                     <Label Grid.Column="0" Height="23" Content="Thickness"/>
-                    <!--<Slider Grid.Column="1"  VerticalAlignment="Center" Minimum="0" Maximum="20" IsSnapToTickEnabled="True" Value="{Binding currentFilter.FontThickness}"/>-->
                     <xtended:DoubleUpDown Grid.Column="2" Value="{Binding currentFilter.FontThickness, UpdateSourceTrigger=PropertyChanged}" 
                                           FormatString="F0" Minimum="0" Maximum="20" Increment="1"/>
                 </Grid>
@@ -196,7 +195,6 @@
                         <ColumnDefinition Width="50"/>
                     </Grid.ColumnDefinitions>
                     <CheckBox Grid.Column="0" Height="23" VerticalContentAlignment="Center" IsChecked="{Binding currentFilter.Border, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Content="Border_Thickness"/>
-                    <!--<Slider Grid.Column="1"  VerticalAlignment="Center" Minimum="0" Maximum="20" IsSnapToTickEnabled="True" Value="{Binding currentFilter.FontThickness}"/>-->
                     <xtended:DoubleUpDown Grid.Column="2" Value="{Binding currentFilter.FontThickness_Border, UpdateSourceTrigger=PropertyChanged}" 
                                           FormatString="F0" Minimum="0" Maximum="20" Increment="1"/>
                 </Grid>

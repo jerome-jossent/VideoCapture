@@ -14,45 +14,67 @@ using System.Windows.Shapes;
 
 using System.ComponentModel;
 using System.Collections.ObjectModel;
-using Newtonsoft.Json;
-
-using System.Text.RegularExpressions;
 
 namespace VideoCapture
 {
-    /// <summary>
-    /// Logique d'interaction pour Filtre_Manager.xaml
-    /// </summary>
     public partial class Filtre_Manager : Window, INotifyPropertyChanged
     {
         MainWindow mainWindow;
         bool forceClosing;
+
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
+        public void _ListFiltersUpdate()
+        {
+            OnPropertyChanged("_ListFilters");
+        }
+
         public Filtre currentFilter
         {
-            get { return _currentFilter; }
+            get
+            {
+                return _currentFilter;
+            }
             set
             {
+                if (_currentFilter == value) return;
+
                 _currentFilter = value;
-                if (_currentFilter != null)
+                if (_currentFilter != null && _currentFilter.isTxt)
                 {
-                    if (_currentFilter.isTxt)
-                    {
-                        Filtre_TXT ft = (Filtre_TXT)_currentFilter;
-                        colorPicker._SetColor(ft.color);
-                        colorPicker_Border._SetColor(ft.color_Border);
-                    }
+                    Filtre_TXT ft = (Filtre_TXT)_currentFilter;
+                    colorPicker._SetColor(ft.color);
+                    colorPicker_Border._SetColor(ft.color_Border);
+                    gridTXT = Visibility.Visible;
+                }
+                else
+                {
+                    gridTXT = Visibility.Collapsed;
                 }
                 OnPropertyChanged("currentFilter");
                 OnPropertyChanged("oneFiltreIsSelected");
+                OnPropertyChanged("gridTXT");
             }
         }
-        Filtre _currentFilter;
+        Filtre _currentFilter = null;
+
+        public Visibility gridTXT
+        {
+            get
+            {
+                return _gridTXT;
+            }
+            set
+            {
+                _gridTXT = value;
+                OnPropertyChanged("gridTXT");
+            }
+        }
+        Visibility _gridTXT = Visibility.Collapsed;
 
         public bool oneFiltreIsSelected
         {
@@ -76,10 +98,31 @@ namespace VideoCapture
             colorPicker._ColorNew += ColorPicker__ColorNew;
             colorPicker_Border._ColorNew += ColorPicker_Border__ColorNew;
 
-            //cbx_font.ItemsSource = Enum.GetValues(typeof(OpenCvSharp.HersheyFonts)).Cast<OpenCvSharp.HersheyFonts>();
+            OnPropertyChanged("gridTXT");
         }
 
-        private void _ListFilters_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        internal void _Link(MainWindow mainWindow)
+        {
+            this.mainWindow = mainWindow;
+            _ListFilters.CollectionChanged += _ListFilters_CollectionChanged;
+        }
+
+        public void ReallyClose()
+        {
+            forceClosing = true;
+            Close();
+        }
+
+        void Window_Closing(object sender, CancelEventArgs e)
+        {
+            if (!forceClosing)
+            {
+                e.Cancel = true;
+                this.Hide();
+            }
+        }
+
+        void _ListFilters_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             if (e.NewItems != null)
                 foreach (Filtre item in e.NewItems)
@@ -95,7 +138,7 @@ namespace VideoCapture
             mainWindow.Filter_Update();
         }
 
-        private void ColorPicker__ColorNew(object sender, Standard_UC_JJO.ColorPickerJJO.NewColorEventArgs e)
+        void ColorPicker__ColorNew(object sender, Standard_UC_JJO.ColorPickerJJO.NewColorEventArgs e)
         {
             if (currentFilter == null) return;
             if (currentFilter._type == Filtre.FiltreType.texte)
@@ -104,7 +147,8 @@ namespace VideoCapture
                 ft.color = colorPicker._Color;
             }
         }
-        private void ColorPicker_Border__ColorNew(object sender, Standard_UC_JJO.ColorPickerJJO.NewColorEventArgs e)
+
+        void ColorPicker_Border__ColorNew(object sender, Standard_UC_JJO.ColorPickerJJO.NewColorEventArgs e)
         {
             if (currentFilter == null) return;
             if (currentFilter._type == Filtre.FiltreType.texte)
@@ -112,12 +156,6 @@ namespace VideoCapture
                 Filtre_TXT ft = (Filtre_TXT)currentFilter;
                 ft.color_Border = colorPicker_Border._Color;
             }
-        }
-
-        internal void _Link(MainWindow mainWindow)
-        {
-            this.mainWindow = mainWindow;
-            _ListFilters.CollectionChanged += _ListFilters_CollectionChanged;
         }
 
         void btn_add_image_click(object sender, RoutedEventArgs e)
@@ -144,7 +182,7 @@ namespace VideoCapture
             mainWindow.Filter_Update();
         }
 
-        private void btn_filtre_moins_Click(object sender, RoutedEventArgs e)
+        void btn_filtre_moins_Click(object sender, RoutedEventArgs e)
         {
             if (currentFilter != null)
             {
@@ -157,33 +195,7 @@ namespace VideoCapture
             }
         }
 
-        private void btn_filtre_save_Click(object sender, RoutedEventArgs e)
-        {
-            mainWindow.Config_Filters_Save();
-        }
-
-        private void btn_filtre_load_Click(object sender, RoutedEventArgs e)
-        {
-            mainWindow.Config_Filters_Load();
-            OnPropertyChanged("_ListFilters");
-        }
-
-        public void ReallyClose()
-        {
-            forceClosing = true;
-            Close();
-        }
-
-        private void Window_Closing(object sender, CancelEventArgs e)
-        {
-            if (!forceClosing)
-            {
-                e.Cancel = true;
-                this.Hide();
-            }
-        }
-
-        private void btn_filtre_duplicate_Click(object sender, RoutedEventArgs e)
+        void btn_filtre_duplicate_Click(object sender, RoutedEventArgs e)
         {
             if (currentFilter == null) return;
 
@@ -195,7 +207,7 @@ namespace VideoCapture
             mainWindow.Filter_Update();
         }
 
-        private void btn_filtre_moveup_Click(object sender, RoutedEventArgs e)
+        void btn_filtre_moveup_Click(object sender, RoutedEventArgs e)
         {
             if (currentFilter == null) return;
             int index = _ListFilters.IndexOf(currentFilter);
@@ -204,7 +216,7 @@ namespace VideoCapture
             mainWindow.Filter_Update();
         }
 
-        private void btn_filtre_movedown_Click(object sender, RoutedEventArgs e)
+        void btn_filtre_movedown_Click(object sender, RoutedEventArgs e)
         {
             if (currentFilter == null) return;
             int index = _ListFilters.IndexOf(currentFilter);
@@ -213,9 +225,20 @@ namespace VideoCapture
             mainWindow.Filter_Update();
         }
 
-        private void SetFilterPosition_Click(object sender, RoutedEventArgs e)
+        void SetFilterPosition_Click(object sender, RoutedEventArgs e)
         {
             mainWindow.SetFilterPosition(currentFilter);
+        }
+
+        void btn_filtre_save_Click(object sender, RoutedEventArgs e)
+        {
+            mainWindow.Config_Filters_Save();
+        }
+
+        void btn_filtre_load_Click(object sender, RoutedEventArgs e)
+        {
+            mainWindow.Config_Filters_Load();
+            OnPropertyChanged("_ListFilters");
         }
     }
 }

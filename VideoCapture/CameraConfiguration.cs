@@ -9,21 +9,12 @@ namespace VideoCapture
     public class CameraConfiguration
     {
         public string deviceName;
-        public string format;
-        public int width, height;
+        public VideoInInfo.Format format;
+        public double width, height;
 
-        public CameraConfiguration(string txt)
-        {
-            string[] config = txt.Split(new string[] { "{}" }, StringSplitOptions.None);
-            deviceName = config[0];
-            format = config[1];
-            width = Convert.ToInt32(config[2]);
-            height = Convert.ToInt32(config[3]);
-            if (width < 0) width = 100;
-            if (height < 0) height = 100;
-        }
+        public CameraConfiguration() { }
 
-        public CameraConfiguration(string deviceName, string format, int width, int height)
+        public CameraConfiguration(string deviceName, VideoInInfo.Format format, double width, double height)
         {
             this.deviceName = deviceName;
             this.format = format;

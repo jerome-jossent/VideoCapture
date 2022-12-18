@@ -11,8 +11,14 @@ namespace VideoCapture
     public abstract class Filtre : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
         [JsonIgnore]
         public bool isImage;
+
         [JsonIgnore]
         public bool isTxt;
 
@@ -32,6 +38,9 @@ namespace VideoCapture
         }
         TypeOrigine _origine;
 
+        public enum FiltreType { texte, image }
+        public FiltreType _type;
+
         public bool enable
         {
             get { return _enable; }
@@ -42,20 +51,6 @@ namespace VideoCapture
             }
         }
         bool _enable = true;
-
-        protected void OnPropertyChanged(string name = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
-
-        public abstract void UpdateTitle();
-        public Filtre Clone()
-        {
-            var jset = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
-            string txt = JsonConvert.SerializeObject(this, Formatting.Indented, jset);
-            Filtre f = (Filtre)JsonConvert.DeserializeObject(txt, jset);
-            return f;
-        }
 
         [JsonIgnore]
         public string title
@@ -93,8 +88,14 @@ namespace VideoCapture
         }
         double y;
 
-        public enum FiltreType { texte, image }
-        public FiltreType _type;
+        public abstract void UpdateTitle();
 
+        public Filtre Clone()
+        {
+            var jset = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
+            string txt = JsonConvert.SerializeObject(this, Formatting.Indented, jset);
+            Filtre f = (Filtre)JsonConvert.DeserializeObject(txt, jset);
+            return f;
+        }
     }
 }
