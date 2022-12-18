@@ -45,6 +45,7 @@ namespace VideoCapture
                     {
                         Filtre_TXT ft = (Filtre_TXT)_currentFilter;
                         colorPicker._SetColor(ft.color);
+                        colorPicker_Border._SetColor(ft.color_Border);
                     }
                 }
                 OnPropertyChanged("currentFilter");
@@ -73,6 +74,7 @@ namespace VideoCapture
             InitializeComponent();
             DataContext = this;
             colorPicker._ColorNew += ColorPicker__ColorNew;
+            colorPicker_Border._ColorNew += ColorPicker_Border__ColorNew;
 
             //cbx_font.ItemsSource = Enum.GetValues(typeof(OpenCvSharp.HersheyFonts)).Cast<OpenCvSharp.HersheyFonts>();
         }
@@ -100,6 +102,15 @@ namespace VideoCapture
             {
                 Filtre_TXT ft = (Filtre_TXT)currentFilter;
                 ft.color = colorPicker._Color;
+            }
+        }
+        private void ColorPicker_Border__ColorNew(object sender, Standard_UC_JJO.ColorPickerJJO.NewColorEventArgs e)
+        {
+            if (currentFilter == null) return;
+            if (currentFilter._type == Filtre.FiltreType.texte)
+            {
+                Filtre_TXT ft = (Filtre_TXT)currentFilter;
+                ft.color_Border = colorPicker_Border._Color;
             }
         }
 

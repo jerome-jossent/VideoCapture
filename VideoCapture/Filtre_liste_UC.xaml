@@ -6,7 +6,12 @@
              xmlns:local="clr-namespace:VideoCapture"
              mc:Ignorable="d" 
              d:DesignHeight="50" d:DesignWidth="500">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+    
     <StackPanel Orientation="Horizontal">
+        
         <CheckBox Margin="0,0,5,0" IsChecked="{Binding enable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
         
         <Rectangle Margin="0,0,5,0" Width="20" Height="20">
@@ -14,7 +19,15 @@
                 <SolidColorBrush Color="{Binding color}" />
             </Rectangle.Fill>
         </Rectangle>
+
+
+        <Rectangle Margin="0,0,5,0" Width="20" Height="20" Visibility="{Binding Border, Converter={StaticResource BoolToVis}}">
+            <Rectangle.Fill>
+                <SolidColorBrush Color="{Binding color_Border, UpdateSourceTrigger=PropertyChanged}" />
+            </Rectangle.Fill>
+        </Rectangle>
         
         <TextBlock Text="{Binding title}"/>
+        
     </StackPanel>
 </UserControl>

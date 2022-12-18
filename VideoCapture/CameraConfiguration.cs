@@ -19,6 +19,8 @@ namespace VideoCapture
             format = config[1];
             width = Convert.ToInt32(config[2]);
             height = Convert.ToInt32(config[3]);
+            if (width < 0) width = 100;
+            if (height < 0) height = 100;
         }
 
         public CameraConfiguration(string deviceName, string format, int width, int height)

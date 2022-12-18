@@ -12,7 +12,7 @@ namespace VideoCapture
     {
         public new bool Dynamic
         {
-            get {return dynamic; }
+            get { return dynamic; }
             set
             {
                 dynamic = value;
@@ -113,7 +113,7 @@ namespace VideoCapture
                 OnPropertyChanged("FontThickness");
             }
         }
-        int fontThickness = 3;
+        int fontThickness = 2;
 
         public double Alpha
         {
@@ -141,7 +141,65 @@ namespace VideoCapture
                 OnPropertyChanged("color");
             }
         }
-        Color _color = Colors.Black;
+        Color _color = Colors.White;
+
+
+
+        public bool Border
+        {
+            get { return border; }
+            set
+            {
+                border = value;
+                UpdateTitle();
+                OnPropertyChanged("Border");
+            }
+        }
+        bool border = false;
+
+        public int FontThickness_Border
+        {
+            get { return fontThickness_Border; }
+            set
+            {
+                fontThickness_Border = value;
+                OnPropertyChanged("FontThickness_Border");
+            }
+        }
+        int fontThickness_Border = 5;
+
+        public double Alpha_Border
+        {
+            get { return alpha_Border; }
+            set
+            {
+                alpha_Border = value;
+
+                byte a = (byte)(alpha_Border * 255);
+                color_Border = Color.FromArgb(a, color_Border.R, color_Border.G, color_Border.B);
+                UpdateTitle();
+                OnPropertyChanged("Alpha_Border");
+            }
+        }
+        double alpha_Border = 1;
+
+        public Color color_Border
+        {
+            get { return _color_Border; }
+            set
+            {
+                byte a = (byte)(alpha_Border * 255);
+                _color_Border = Color.FromArgb(a, value.R, value.G, value.B);
+                OnPropertyChanged("color_Border");
+                UpdateTitle();
+            }
+        }
+        Color _color_Border = Colors.Black;
+
+
+
+
+
 
         public Filtre_TXT()
         {
@@ -178,9 +236,9 @@ namespace VideoCapture
                 Y.ToString("0.000") +
                 ") " +
                 new String(o.Where(c => char.IsUpper(c)).ToArray())
-                 +                
-                "\t" +
-                color.ToString() +
+                 +
+                //"\t" +                color.ToString() +
+                //((Border) ? "\t" + color_Border.ToString() : "") +
                 (Dynamic ? "\t[D] " : "\t[S] ") +
                 t;
         }

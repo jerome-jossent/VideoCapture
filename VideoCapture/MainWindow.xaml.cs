@@ -26,6 +26,9 @@ namespace VideoCapture
 
         const string version = "version 2022/12/05";
 
+        string fichier_config = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\config.json";
+        string fichier_filtres = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\filtres.json";
+
 
         #region VARIABLES & PARAMETERS
         // FPS
@@ -773,6 +776,7 @@ namespace VideoCapture
 
                         if (filtres_aumoins1dynamic)
                         {
+                            DateTime dt = DateTime.Now;
                             foreach (Filtre filtre in filtres)
                             {
                                 if (filtre.Dynamic && filtre.enable)
@@ -788,19 +792,19 @@ namespace VideoCapture
                                             switch (ft.filtre_TXT_Type)
                                             {
                                                 case Filtre_TXT.Filtre_TXT_Type.Date:
-                                                    txt = DateTime.Now.ToString("yyyy-MM-dd");
+                                                    txt = dt.ToString("yyyy-MM-dd");
                                                     break;
                                                 case Filtre_TXT.Filtre_TXT_Type.Time:
-                                                    txt = DateTime.Now.ToString("HH:mm:ss");
+                                                    txt = dt.ToString("HH:mm:ss");
                                                     break;
                                                 case Filtre_TXT.Filtre_TXT_Type.Time_ms:
-                                                    txt = DateTime.Now.ToString("HH:mm:ss.fff");
+                                                    txt = dt.ToString("HH:mm:ss.fff");
                                                     break;
                                                 case Filtre_TXT.Filtre_TXT_Type.Date_Time:
-                                                    txt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                                                    txt = dt.ToString("yyyy-MM-dd HH:mm:ss");
                                                     break;
                                                 case Filtre_TXT.Filtre_TXT_Type.Date_Time_ms:
-                                                    txt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                                                    txt = dt.ToString("yyyy-MM-dd HH:mm:ss.fff");
                                                     break;
                                                 case Filtre_TXT.Filtre_TXT_Type.FrameNumber:
                                                     txt = framereallygrabbed.ToString();
@@ -810,22 +814,42 @@ namespace VideoCapture
                                                     break;
                                             }
 
-                                            OpenCvSharp.Size textsize = Cv2.GetTextSize(txt, ft.font, ft.FontScale, ft.FontThickness, out int Y_baseline);
+                                            int FontThickness_MAX;
+                                            if (ft.Border)
+                                            {
+                                                FontThickness_MAX = ft.FontThickness_Border;
+                                                if (ft.FontThickness > FontThickness_MAX)
+                                                    FontThickness_MAX = ft.FontThickness;
+                                            }
+                                            else
+                                            {
+                                                FontThickness_MAX = ft.FontThickness;
+                                            }
+                                            OpenCvSharp.Size textsize = Cv2.GetTextSize(txt, ft.font, ft.FontScale, FontThickness_MAX, out int Y_baseline);
 
                                             switch (ft.origine)
                                             {
-                                                case Filtre.TypeOrigine.UpLeft:         p.Y += textsize.Height; break;
-                                                case Filtre.TypeOrigine.UpMiddle:       p.Y += textsize.Height; p.X -= textsize.Width / 2; break;
-                                                case Filtre.TypeOrigine.UpRight:        p.Y += textsize.Height; p.X -= textsize.Width; break;
-                                                case Filtre.TypeOrigine.MiddleLeft:     p.Y += textsize.Height / 2; break;
-                                                case Filtre.TypeOrigine.Middle:         p.Y += textsize.Height / 2; p.X -= textsize.Width / 2; break;
-                                                case Filtre.TypeOrigine.MiddleRight:    p.Y += textsize.Height / 2; p.X -= textsize.Width; break;
+                                                case Filtre.TypeOrigine.UpLeft: p.Y += textsize.Height; break;
+                                                case Filtre.TypeOrigine.UpMiddle: p.Y += textsize.Height; p.X -= textsize.Width / 2; break;
+                                                case Filtre.TypeOrigine.UpRight: p.Y += textsize.Height; p.X -= textsize.Width; break;
+                                                case Filtre.TypeOrigine.MiddleLeft: p.Y += textsize.Height / 2; break;
+                                                case Filtre.TypeOrigine.Middle: p.Y += textsize.Height / 2; p.X -= textsize.Width / 2; break;
+                                                case Filtre.TypeOrigine.MiddleRight: p.Y += textsize.Height / 2; p.X -= textsize.Width; break;
                                                 case Filtre.TypeOrigine.DownLeft: break;
-                                                case Filtre.TypeOrigine.DownMiddle:     p.X -= textsize.Width / 2; break;
-                                                case Filtre.TypeOrigine.DownRight:      p.X -= textsize.Width; break;
+                                                case Filtre.TypeOrigine.DownMiddle: p.X -= textsize.Width / 2; break;
+                                                case Filtre.TypeOrigine.DownRight: p.X -= textsize.Width; break;
                                             }
-
-                                            Cv2.PutText(f, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                                            if (ft.Border)
+                                            {
+                                                //bordure
+                                                Scalar ftcolor_border = new Scalar(ft.color_Border.B, ft.color_Border.G, ft.color_Border.R, ft.color_Border.A);
+                                                Cv2.PutText(f, txt, p, ft.font, ft.FontScale, ftcolor_border, ft.FontThickness_Border, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                                                Cv2.PutText(f, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                                            }
+                                            else
+                                            {
+                                                Cv2.PutText(f, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                                            }
                                             break;
 
                                         case Filtre.FiltreType.image:
@@ -1207,7 +1231,19 @@ namespace VideoCapture
                                     default:
                                         break;
                                 }
-                                OpenCvSharp.Size textsize = Cv2.GetTextSize(txt, ft.font, ft.FontScale, ft.FontThickness, out int Y_baseline);
+
+                                int FontThickness_MAX;
+                                if (ft.Border)
+                                {
+                                    FontThickness_MAX = ft.FontThickness_Border;
+                                    if (ft.FontThickness > FontThickness_MAX)
+                                        FontThickness_MAX = ft.FontThickness;
+                                }
+                                else
+                                {
+                                    FontThickness_MAX = ft.FontThickness;
+                                }
+                                OpenCvSharp.Size textsize = Cv2.GetTextSize(txt, ft.font, ft.FontScale, FontThickness_MAX, out int Y_baseline);
 
                                 switch (ft.origine)
                                 {
@@ -1221,8 +1257,17 @@ namespace VideoCapture
                                     case Filtre.TypeOrigine.DownMiddle: p.X -= textsize.Width / 2; break;
                                     case Filtre.TypeOrigine.DownRight: p.X -= textsize.Width; break;
                                 }
-
-                                Cv2.PutText(filterframe, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                                if (ft.Border)
+                                {
+                                    //bordure
+                                    Scalar ftcolor_border = new Scalar(ft.color_Border.B, ft.color_Border.G, ft.color_Border.R, ft.color_Border.A);
+                                    Cv2.PutText(filterframe, txt, p, ft.font, ft.FontScale, ftcolor_border, ft.FontThickness_Border, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                                    Cv2.PutText(filterframe, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                                }
+                                else
+                                {
+                                    Cv2.PutText(filterframe, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                                }
                             }
                             if (ft.Dynamic)
                             {
@@ -1429,15 +1474,18 @@ namespace VideoCapture
 
         void Config_Save()
         {
-            CameraConfiguration cc = new CameraConfiguration(deviceName, cbx_deviceFormat.SelectedValue as string, (int)Width, (int)Height);
+            CameraConfiguration cc = new CameraConfiguration(deviceName, cbx_deviceFormat.SelectedValue as string, (int)ActualWidth, (int)ActualHeight);
             string txt = cc.ToString();
-            Properties.Settings.Default.config = txt;
-            Properties.Settings.Default.Save();
+
+            File.WriteAllText(fichier_config, txt);
+            //Properties.Settings.Default.config = txt;
+            //Properties.Settings.Default.Save();
         }
 
         void Config_Load()
         {
-            string txt = Properties.Settings.Default.config;
+            //string txt = Properties.Settings.Default.config;
+            string txt = System.IO.File.Exists(fichier_config)?File.ReadAllText(fichier_config):null;
             if (txt == null || txt == "")
                 return;
 
@@ -1453,13 +1501,16 @@ namespace VideoCapture
         {
             var jset = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
             string json = JsonConvert.SerializeObject(filtres, Formatting.Indented, jset);
-            Properties.Settings.Default.filters = json;
-            Properties.Settings.Default.Save();
+
+            File.WriteAllText(fichier_filtres, json);
+            //Properties.Settings.Default.filters = json;
+            //Properties.Settings.Default.Save();
         }
 
         public void Config_Filters_Load()
         {
-            string json = Properties.Settings.Default.filters;
+            //string json = Properties.Settings.Default.filters;
+            string json = System.IO.File.Exists(fichier_filtres) ? File.ReadAllText(fichier_filtres) : null;
             if (json == null || json == "")
                 return;
 
@@ -1476,6 +1527,5 @@ namespace VideoCapture
             }
         }
         #endregion
-
     }
 }
