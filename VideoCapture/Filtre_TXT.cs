@@ -208,19 +208,24 @@ namespace VideoCapture
 
         #endregion
 
-
-
         public Filtre_TXT()
         {
             X = 0.5;
             Y = 0.5;
             _type = FiltreType.texte;
-            isTxt = true;
             origine = TypeOrigine.DownLeft;
+            isTxt = true;
+            OnPropertyChanged("isTxt");
+            OnPropertyChanged("isImage");
         }
 
         public override void UpdateTitle()
         {
+            title = "xy [" + X.ToString("0.000") + "|" + Y.ToString("0.000") + "]";
+            string o = origine.ToString();
+            title1 = new string(o.Where(c => char.IsUpper(c)).ToArray());
+            title2 = (Dynamic ? "[D] " : "[S] ");
+
             string t = "";
             switch (filtre_TXT_Type)
             {
@@ -238,15 +243,7 @@ namespace VideoCapture
                     t = filtre_TXT_Type.ToString();
                     break;
             }
-            string o = origine.ToString();
-            title = "xy(" +
-                X.ToString("0.000") +
-                "|" +
-                Y.ToString("0.000") +
-                ") " +
-                new String(o.Where(c => char.IsUpper(c)).ToArray()) +
-                (Dynamic ? "\t[D] " : "\t[S] ") +
-                t;
+            title3 = t;
         }
     }
 }

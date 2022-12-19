@@ -165,6 +165,7 @@
     </Compile>
     <Compile Include="Filtre_TXT.cs" />
     <Compile Include="InverseBooleanConverter.cs" />
+    <Compile Include="NullVisibilityConverter.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

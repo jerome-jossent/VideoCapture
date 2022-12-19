@@ -8,26 +8,59 @@
              d:DesignHeight="50" d:DesignWidth="500">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <local:BitmapToBitmapImageConverter x:Key="bitmapConverter"/>
     </UserControl.Resources>
-    
-    <StackPanel Orientation="Horizontal">
-        
-        <CheckBox Margin="0,0,5,0" IsChecked="{Binding enable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-        
-        <Rectangle Margin="0,0,5,0" Width="20" Height="20">
-            <Rectangle.Fill>
-                <SolidColorBrush Color="{Binding color}" />
-            </Rectangle.Fill>
-        </Rectangle>
+    <Grid>
+        <Grid Visibility="{Binding isTxt, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="30"/>
+                <ColumnDefinition Width="30"/>
+                <ColumnDefinition Width="90"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
+            <CheckBox Grid.Column="0" IsChecked="{Binding enable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
 
-        <Rectangle Margin="0,0,5,0" Width="20" Height="20" Visibility="{Binding Border, Converter={StaticResource BoolToVis}}">
-            <Rectangle.Fill>
-                <SolidColorBrush Color="{Binding color_Border, UpdateSourceTrigger=PropertyChanged}" />
-            </Rectangle.Fill>
-        </Rectangle>
+            <Rectangle Grid.Column="1" Width="20" Height="20">
+                <Rectangle.Fill>
+                    <SolidColorBrush Color="{Binding color}" />
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <Rectangle Grid.Column="2" Width="20" Height="20" Visibility="{Binding Border, Converter={StaticResource BoolToVis}}">
+                <Rectangle.Fill>
+                    <SolidColorBrush Color="{Binding color_Border, UpdateSourceTrigger=PropertyChanged}" />
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <TextBlock Grid.Column="3" Text="{Binding title}"/>
+            <TextBlock Grid.Column="4" Text="{Binding title1}"/>
+            <TextBlock Grid.Column="5" Text="{Binding title2}"/>
+            <TextBlock Grid.Column="6" Text="{Binding title3}"/>
+        </Grid>        
         
-        <TextBlock Text="{Binding title}"/>
-        
-    </StackPanel>
+        <Grid Visibility="{Binding isImage, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="60"/>
+                <ColumnDefinition Width="90"/>                
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
+            </Grid.ColumnDefinitions>
+
+            <CheckBox Grid.Column="0" IsChecked="{Binding enable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+
+            <Image Grid.Column="1" Width="20" Height="20" Visibility="{Binding isImage, Converter={StaticResource BoolToVis}}"
+               Source="{Binding _imageSource, Mode=OneWay, NotifyOnSourceUpdated=True, Converter={StaticResource bitmapConverter}}" RenderOptions.BitmapScalingMode="Fant"/>
+
+            <TextBlock Grid.Column="2" Text="{Binding title}"/>
+            <TextBlock Grid.Column="3" Text="{Binding title1}"/>
+            <TextBlock Grid.Column="4" Text="{Binding title2}"/>
+            <TextBlock Grid.Column="5" Text="{Binding title3}"/>
+        </Grid>
+    </Grid>
 </UserControl>

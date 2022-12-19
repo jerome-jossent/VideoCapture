@@ -16,6 +16,7 @@
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <local:BitmapToBitmapImageConverter x:Key="bitmapConverter"/>
 
         <ObjectDataProvider x:Key="dataFromEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
             <ObjectDataProvider.MethodParameters>
@@ -35,6 +36,7 @@
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
 
 
@@ -52,6 +54,8 @@
                     </MenuItem.Header>
 
 
+                    <MenuItem Click="btn_add_image_click" Header="Image"/>
+                    <Separator/>
                     <MenuItem Click="btn_add_text_click" Header="Free"/>
                     <MenuItem Click="btn_add_text_click" Header="DeviceName"/>
                     <Separator/>
@@ -123,13 +127,60 @@
             </ListBox>
         </Grid>
 
+        <!-- FORMULAIRE IMAGE -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Visibility="{Binding gridIMG, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    >
+            <StackPanel Width="350" Orientation="Vertical" >
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="40"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="40"/>
+                    </Grid.ColumnDefinitions>
+                    <Image Source="/Resources/Folder.png" MouseDown="SelectFilterOnDisk_Click" ToolTip="{Binding currentFilter.FileName, UpdateSourceTrigger=PropertyChanged}" RenderOptions.BitmapScalingMode="Fant"/>
+
+                    <TextBlock Grid.Column="1" Margin="5,0,0,0" Text="{Binding currentFilter.FileName, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                    <Image Grid.Column="2" Source="{Binding currentFilter._imageSource, Mode=OneWay, NotifyOnSourceUpdated=True, Converter={StaticResource bitmapConverter}}" RenderOptions.BitmapScalingMode="Fant"/>
+
+                </Grid>
+            </StackPanel>
+            <StackPanel Width="200" Orientation="Vertical" >
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="40"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="50"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" Content="Alpha"/>
+                    <Slider Grid.Column="1" VerticalAlignment="Center" Minimum="0" Maximum="1" TickFrequency="0.01" Value="{Binding currentFilter.Alpha}"/>
+                    <xtended:DoubleUpDown Grid.Column="2" Value="{Binding currentFilter.Alpha, UpdateSourceTrigger=PropertyChanged}"
+                                          FormatString="F2" Minimum="0" Maximum="1" Increment="0.01" />
+                </Grid>
+            </StackPanel>
+            <Button Content="Set Position" Click="SetFilterPosition_Click" Height="30" Padding="5" Margin="5"/>
+            <StackPanel Width="180" Orientation="Vertical" >
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="40"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="50"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" Content="Size"/>
+                    <Slider Grid.Column="1" VerticalAlignment="Center" Minimum="0.01" Maximum="10" TickFrequency="0.01" Value="{Binding currentFilter.ScaleFactor}"/>
+                    <xtended:DoubleUpDown Grid.Column="2" Value="{Binding currentFilter.ScaleFactor, UpdateSourceTrigger=PropertyChanged}"
+                                          FormatString="F2" Minimum="0.01" Maximum="10" Increment="0.01" />
+                </Grid>
+
+            </StackPanel>
+        </StackPanel>
+
         <!-- FORMULAIRE TEXTE -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" 
+        <StackPanel Grid.Row="3" Orientation="Horizontal" 
                     Visibility="{Binding gridTXT, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                     >
 
             <!-- Texte + font -->
-            <StackPanel Width="250"  Orientation="Vertical" >
+            <StackPanel Width="250" Orientation="Vertical" >
                 <TextBox Height="50" TextWrapping="NoWrap" 
                          Visibility="{Binding Path=currentFilter.Filtre_TXT_Static_Free, Converter={StaticResource BoolToVis}}" 
                          Text="{Binding currentFilter.txt, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
@@ -177,7 +228,7 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="50"/>
                     </Grid.ColumnDefinitions>
-                    <Label Grid.Column="0" Content="Alpha" Background="{Binding currentFilter.color, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                    <Label Grid.Column="0" Content="Alpha"/>
                     <Slider Grid.Column="1" VerticalAlignment="Center" Minimum="0" Maximum="1" TickFrequency="0.01" Value="{Binding currentFilter.Alpha}"/>
                     <xtended:DoubleUpDown Grid.Column="2" Value="{Binding currentFilter.Alpha, UpdateSourceTrigger=PropertyChanged}"
                                           FormatString="F2" Minimum="0" Maximum="1" Increment="0.01" />
@@ -205,7 +256,7 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="50"/>
                     </Grid.ColumnDefinitions>
-                    <Label Grid.Column="0" Content="Alpha" Background="{Binding currentFilter.color_Border, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                    <Label Grid.Column="0" Content="Alpha"/>
                     <Slider Grid.Column="1" VerticalAlignment="Center" Minimum="0" Maximum="1" TickFrequency="0.01" Value="{Binding currentFilter.Alpha_Border}"/>
                     <xtended:DoubleUpDown Grid.Column="2" Value="{Binding currentFilter.Alpha_Border, UpdateSourceTrigger=PropertyChanged}"
                                           FormatString="F2" Minimum="0" Maximum="1" Increment="0.01" />
@@ -213,12 +264,12 @@
             </StackPanel>
 
             <Grid Width="5"/>
-            
+
             <!-- Origine -->
             <Grid>
                 <StackPanel Orientation="Vertical">
-            
-        <StackPanel Orientation="Horizontal" Height="30" >
+
+                    <StackPanel Orientation="Horizontal" Height="30" >
                         <Label Content="Origine"/>
                         <ComboBox ItemsSource="{Binding Source={StaticResource origineFromEnum}}"
                               VerticalContentAlignment="Center" Width="100"

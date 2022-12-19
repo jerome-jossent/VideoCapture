@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace VideoCapture
 {
@@ -14,13 +15,30 @@ namespace VideoCapture
         protected void OnPropertyChanged(string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }//title    ScaleFactor X   Y
+
+        [JsonIgnore]
+        public bool isImage
+        {
+            get { return _isImage; }
+            set { 
+                _isImage = value;
+                OnPropertyChanged("isImage");
+            }
         }
+        bool _isImage;
 
         [JsonIgnore]
-        public bool isImage;
-
-        [JsonIgnore]
-        public bool isTxt;
+        public bool isTxt
+        {
+            get { return _isTxt; }
+            set
+            {
+                _isTxt = value;
+                OnPropertyChanged("isTxt");
+            }
+        }
+        bool _isTxt;
 
         public bool Dynamic;
 
@@ -63,6 +81,42 @@ namespace VideoCapture
             }
         }
         string _title;
+
+        [JsonIgnore]
+        public string title1
+        {
+            get { return _title1; }
+            set
+            {
+                _title1 = value;
+                OnPropertyChanged("title1");
+            }
+        }
+        string _title1;
+
+        [JsonIgnore]
+        public string title2
+        {
+            get { return _title2; }
+            set
+            {
+                _title2 = value;
+                OnPropertyChanged("title2");
+            }
+        }
+        string _title2;
+
+        [JsonIgnore]
+        public string title3
+        {
+            get { return _title3; }
+            set
+            {
+                _title3 = value;
+                OnPropertyChanged("title3");
+            }
+        }
+        string _title3;
 
         public double X
         {

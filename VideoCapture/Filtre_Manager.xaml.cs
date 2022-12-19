@@ -44,20 +44,28 @@ namespace VideoCapture
                 if (_currentFilter == value) return;
 
                 _currentFilter = value;
-                if (_currentFilter != null && _currentFilter.isTxt)
+                if (_currentFilter != null)
                 {
-                    Filtre_TXT ft = (Filtre_TXT)_currentFilter;
-                    colorPicker._SetColor(ft.color);
-                    colorPicker_Border._SetColor(ft.color_Border);
-                    gridTXT = Visibility.Visible;
+                    if (_currentFilter.isTxt)
+                    {
+                        Filtre_TXT ft = (Filtre_TXT)_currentFilter;
+                        colorPicker._SetColor(ft.color);
+                        colorPicker_Border._SetColor(ft.color_Border);
+
+                        gridTXT = Visibility.Visible;
+                        gridIMG = Visibility.Collapsed;
+                    }
+
+                    if (_currentFilter.isImage)
+                    {
+                        gridTXT = Visibility.Collapsed;
+                        gridIMG = Visibility.Visible;
+                    }
                 }
-                else
-                {
-                    gridTXT = Visibility.Collapsed;
-                }
+                OnPropertyChanged("gridTXT");
+                OnPropertyChanged("gridIMG");
                 OnPropertyChanged("currentFilter");
                 OnPropertyChanged("oneFiltreIsSelected");
-                OnPropertyChanged("gridTXT");
             }
         }
         Filtre _currentFilter = null;
@@ -75,6 +83,20 @@ namespace VideoCapture
             }
         }
         Visibility _gridTXT = Visibility.Collapsed;
+
+        public Visibility gridIMG
+        {
+            get
+            {
+                return _gridIMG;
+            }
+            set
+            {
+                _gridIMG = value;
+                OnPropertyChanged("gridIMG");
+            }
+        }
+        Visibility _gridIMG = Visibility.Collapsed;
 
         public bool oneFiltreIsSelected
         {
@@ -164,7 +186,6 @@ namespace VideoCapture
             _ListFilters.Add(f);
             currentFilter = f;
             f.PropertyChanged += FilterPropertyChanged;
-
             mainWindow.Filter_Update();
         }
 
@@ -203,7 +224,6 @@ namespace VideoCapture
             _ListFilters.Add(f);
             currentFilter = f;
             f.PropertyChanged += FilterPropertyChanged;
-
             mainWindow.Filter_Update();
         }
 
@@ -220,7 +240,7 @@ namespace VideoCapture
         {
             if (currentFilter == null) return;
             int index = _ListFilters.IndexOf(currentFilter);
-            if (index >= _ListFilters.Count) return;
+            if (index >= _ListFilters.Count - 1) return;
             _ListFilters.Move(index, index + 1);
             mainWindow.Filter_Update();
         }
@@ -239,6 +259,22 @@ namespace VideoCapture
         {
             mainWindow.Config_Filters_Load();
             OnPropertyChanged("_ListFilters");
+        }
+
+        void SelectFilterOnDisk_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (currentFilter == null) return;
+            if (currentFilter._type != Filtre.FiltreType.image) return;
+            Filtre_IMAGE fi = (Filtre_IMAGE)currentFilter;
+
+            using (var dialog = new System.Windows.Forms.OpenFileDialog())
+            {
+                System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    fi.FileName = dialog.FileName;
+                }
+            }
         }
     }
 }

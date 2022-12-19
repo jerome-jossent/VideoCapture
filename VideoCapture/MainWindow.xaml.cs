@@ -624,12 +624,14 @@ namespace VideoCapture
                         capture.Read(frame);
                     }
                     newFormat = false;
+
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         Width = cameraConfiguration.width;
                         Height = cameraConfiguration.height;
                         configLoading = false;
                     });
+
                     Filter_Update();
                 }
 
@@ -668,9 +670,7 @@ namespace VideoCapture
                         framereallygrabbed++;
 
                         if (roi_enabled)
-                        {
                             frame = ROI(frame, roi);
-                        }
 
                         frame = RotationFlip(frame, flip_h, flip_v, rotation);
 
@@ -1132,6 +1132,7 @@ namespace VideoCapture
 
                     switch (f._type)
                     {
+                        #region "texte"
                         case Filtre.FiltreType.texte:
                             Filtre_TXT ft = (Filtre_TXT)f;
                             if (ft.Static)
@@ -1196,10 +1197,58 @@ namespace VideoCapture
                             }
 
                             break;
+                        #endregion
 
+                        #region "image"
                         case Filtre.FiltreType.image:
+                            Filtre_IMAGE fi = (Filtre_IMAGE)f;
+
+                            if (fi.mat == null)
+                                break;
+
+                            var filterMat4 = new Mat<Vec4b>(filterframe);
+                            var filterIndexer = filterMat4.GetIndexer();
+
+                            Mat fi_mat_resized = new Mat();
+                            Cv2.Resize(fi.mat, fi_mat_resized, new OpenCvSharp.Size(), fx: fi.ScaleFactor, fy: fi.ScaleFactor, interpolation: InterpolationFlags.Cubic);
+
+                            switch (fi.mat.Channels())
+                            {
+                                case 3:
+
+                                    break;
+
+                                case 4:
+                                    var mat4 = new Mat<Vec4b>(fi_mat_resized);
+                                    var indexer = mat4.GetIndexer();
+
+                                    for (int y = 0; y < fi_mat_resized.Height; y++)
+                                    {
+                                        for (int x = 0; x < fi_mat_resized.Width; x++)
+                                        {
+                                            Vec4b color = indexer[y, x];
+
+                                            byte alpha = color.Item3;
+                                            if (alpha == 0) continue;
+
+                                            //centré
+                                            int X = (int)(fi.X * frame.Width) + x - fi_mat_resized.Width / 2;
+                                            int Y = (int)(fi.Y * frame.Height) + y - fi_mat_resized.Height / 2;
+
+                                            if (X < 0 || Y < 0) continue;
+                                            if (X > frame.Width - 1 || Y > frame.Height - 1) continue;
+
+                                            filterIndexer[Y, X] = color;
+                                        }
+                                    }
+                                    break;
+
+                                default:
+                                    break;
+                            }
 
                             break;
+                            #endregion
                     }
                 }
             }
@@ -1207,6 +1256,10 @@ namespace VideoCapture
             {
 
             }
+
+            //Cv2.NamedWindow("e");
+            //Cv2.ImShow("e", filterframe);
+            //Cv2.WaitKey();
         }
 
         bool filterPositionning = false;
@@ -1512,8 +1565,16 @@ namespace VideoCapture
         #region FITLRES
         public void Config_Filters_Save()
         {
-            string json = JsonConvert.SerializeObject(FILTRES, Formatting.Indented, new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All });
-            File.WriteAllText(fichier_filtres, json);
+            try
+            {
+                string json = JsonConvert.SerializeObject(FILTRES, Formatting.Indented, 
+                    new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All });
+                File.WriteAllText(fichier_filtres, json);
+            }
+            catch (Exception ex)
+            {
+
+            }
         }
 
         public void Config_Filters_Load()
