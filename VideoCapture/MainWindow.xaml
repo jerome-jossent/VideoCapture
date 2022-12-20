@@ -8,6 +8,8 @@
         xmlns:local="clr-namespace:VideoCapture"
         mc:Ignorable="d"
         
+        xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
+        
         Title="{Binding _title}" Height="250" Width="450"
         
         MinWidth="450"
@@ -18,7 +20,7 @@
         MouseMove="Window_MouseMove" 
         KeyDown="Window_KeyDown"
         >
-    
+
     <Window.Resources>
         <local:BitmapToBitmapImageConverter x:Key="bitmapConverter"/>
         <local:VisibilityConverter x:Key = "VisibilityConverter" />
@@ -35,13 +37,18 @@
 
     <Grid>
         <!--IMAGE CAPTURE-->
-        <Image x:Name="image" Stretch="Uniform" HorizontalAlignment="Left"
+        <!--<Image x:Name="image" Stretch="Uniform" HorizontalAlignment="Left"
                Source="{Binding _imageSource, Mode=OneWay, NotifyOnSourceUpdated=True, Converter={StaticResource bitmapConverter}}"
+               MouseDown="img_mousedown"
+               RenderOptions.BitmapScalingMode="Fant"/>-->
+        <Image x:Name="image" Stretch="Uniform" HorizontalAlignment="Left"
+               Source="{Binding IMS, Mode=OneWay, NotifyOnSourceUpdated=True}"
                MouseDown="img_mousedown"
                RenderOptions.BitmapScalingMode="Fant"/>
 
         <!--IMAGE FILTRE-->
         <Image x:Name="imagecalque" Stretch="Uniform" HorizontalAlignment="Left"
+               Source="{Binding IMS_calque, Mode=OneWay, NotifyOnSourceUpdated=True}"
                RenderOptions.BitmapScalingMode="Fant"/>
 
         <!--(IMAGE) CONTEXTMENU-->
@@ -68,7 +75,7 @@
                             </StackPanel>
                         </MenuItem.Header>
                     </MenuItem>
-                    
+
                     <!-- Set Native Size -->
                     <MenuItem Name="ctxm_nativesize" Click="ctxm_nativesize_Switch_Click">
                         <MenuItem.Header>
@@ -199,7 +206,7 @@
                                 <ContentPresenter Margin="10,0,0,0" Content="About" />
                             </StackPanel>
                         </MenuItem.Header>
-                        
+
                         <MenuItem>
                             <MenuItem.Header>
                                 <Label Content="Video Capture" FontWeight="Bold"/>
@@ -220,7 +227,7 @@
                                 <Label Content="https://github.com/jerome-jossent/VideoCapture"/>
                             </MenuItem.Header>
                         </MenuItem>
-                        
+
                     </MenuItem>
 
                     <!-- Exit -->
@@ -248,8 +255,9 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            
+
             <!--MENU GAUCHE 1-->
             <StackPanel Grid.Column="0" Grid.Row="0" Height="40" Orientation="Horizontal">
                 <StackPanel.Resources>
@@ -279,6 +287,21 @@
                 <ComboBox Name="cbx_deviceFormat" MinWidth="100" Height="36" SelectionChanged="Combobox_CaptureDeviceFormat_Change" VerticalContentAlignment="Center" ToolTip="Format"/>
 
                 <Image Source="/Resources/camera_settings.png" MouseDown="CAMERA_SETTINGS_Click" ToolTip="Display camera settings" RenderOptions.BitmapScalingMode="Fant"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="0" Grid.Row="2" Height="40" Orientation="Horizontal">
+                <StackPanel.Resources>
+                    <Style TargetType="{x:Type Image}">
+                        <Setter Property="Margin" Value="2"/>
+                    </Style>
+                    <Style TargetType="{x:Type ComboBox}">
+                        <Setter Property="Margin" Value="2"/>
+                    </Style>
+                </StackPanel.Resources>
+
+                <Image Source="/Resources/microphone.png" RenderOptions.BitmapScalingMode="Fant"/>
+                <ComboBox Name="cbx_deviceAudio" MinWidth="100" Height="36" SelectionChanged="Combobox_CaptureDeviceAudio_Change" VerticalContentAlignment="Center" ToolTip="Format"/>
+                <Image Source="/Resources/refresh.png" MouseDown="AllAudioDevices_Click" ToolTip="Refresh" RenderOptions.BitmapScalingMode="Fant"/>
             </StackPanel>
 
             <!--MENU GAUCHE 2-->
@@ -326,7 +349,7 @@
 
                 <CheckBox Grid.Column="2" Height="40" Content="Infos" IsChecked="{Binding _ShowCPUMem}" VerticalContentAlignment="Center" Margin="0,0,5,0" HorizontalAlignment="Right" />
             </StackPanel>
-            
+
             <StackPanel Grid.Column="3" Grid.Row="1" Height="40" Orientation="Horizontal">
                 <StackPanel.Resources>
                     <Style TargetType="{x:Type Image}">
@@ -357,6 +380,11 @@
             <!--CPU MEM-->
             <Standard_UC_Net4_7_2_JJO:CPU_Memory Grid.Column="1" x:Name="cpu_mem" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="#55ffffff"/>
         </Grid>
+
+
+        <!--<WindowsFormsHost Width="2400" >
+            <wf:PictureBox x:Name="pb" SizeMode="StretchImage" />
+        </WindowsFormsHost>-->
 
     </Grid>
 </Window>

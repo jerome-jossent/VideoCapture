@@ -13,6 +13,17 @@ using System.IO;
 using System.Collections.ObjectModel;
 using Newtonsoft.Json;
 
+
+//using CSCore;
+//using CSCore.Codecs.WAV;
+//using CSCore.CoreAudioAPI;
+//using System.Windows.Forms;
+//using CSCore.SoundIn;
+//using CSCore.Streams;
+//using CSCore.Win32;
+
+
+
 namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
@@ -31,7 +42,13 @@ namespace VideoCapture
         Dictionary<string, CameraConfiguration> CONFIGURATIONS = new Dictionary<string, CameraConfiguration>();
         Dictionary<string, ObservableCollection<Filtre>> FILTRES = new Dictionary<string, ObservableCollection<Filtre>>();
 
-        // CAMERA
+        // AUDIO
+        Dictionary<string, CSCore.CoreAudioAPI.MMDevice> audioDevices;
+        CSCore.CoreAudioAPI.MMDevice currentAudioDevice;
+        Thread threadCaptureAudio;
+        bool isRunningCaptureAudio = false;
+
+        // VIDEO
         Thread threadCapture;
         bool isRunning = false;
         DirectShowLib.DsDevice[] devices;
@@ -191,6 +208,39 @@ namespace VideoCapture
             }
         }
         System.Drawing.Bitmap imageSource;
+
+
+        public System.Windows.Media.ImageSource IMS
+        {
+            get
+            {
+                return ims;
+            }
+            set
+            {
+                ims = value;
+                OnPropertyChanged("IMS");
+            }
+        }
+        System.Windows.Media.ImageSource ims;
+
+        public System.Windows.Media.ImageSource IMS_calque
+        {
+            get
+            {
+                return ims_calque;
+            }
+            set
+            {
+                ims_calque = value;
+                OnPropertyChanged("IMS_calque");
+            }
+        }
+        System.Windows.Media.ImageSource ims_calque;
+
+
+
+
 
         public System.Drawing.Bitmap _imageCalque
         {
@@ -440,7 +490,8 @@ namespace VideoCapture
 
         void INITS()
         {
-            ListDevices();
+            ListVideoDevices();
+            ListAudioDevices();
             UpdateFilers();
             ManageFilter("");
             FullScreenManagement();
@@ -462,18 +513,19 @@ namespace VideoCapture
             isRunning = false;
             CaptureCameraStop();
             FiltreCameraStop();
+            CaptureAudioStop();
 
             if (filtre_manager != null)
                 filtre_manager.ReallyClose();
         }
 
-        #region DEVICES MANAGEMENT
+        #region DEVICES VIDEO MANAGEMENT
         private void AllDevices_Click(object sender, MouseButtonEventArgs e)
         {
-            ListDevices();
+            ListVideoDevices();
         }
 
-        void ListDevices()
+        void ListVideoDevices()
         {
             devices = VideoInInfo.EnumerateVideoDevices_JJ();
             if (cbx_device != null)
@@ -546,7 +598,7 @@ namespace VideoCapture
         }
         #endregion
 
-        #region CAPTURE MANAGEMENT
+        #region CAPTURE VIDEO MANAGEMENT
         void CaptureCamera(int index)
         {
             if (threadCapture != null && threadCapture.IsAlive)
@@ -783,7 +835,7 @@ namespace VideoCapture
                         if (!f.Empty())
                             Application.Current.Dispatcher.Invoke(() =>
                             {
-                                imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(f));
+                                IMS_calque = OpenCvSharp.WpfExtensions.WriteableBitmapConverter.ToWriteableBitmap(f);
                             });
                     }
 
@@ -798,25 +850,130 @@ namespace VideoCapture
         }
         #endregion
 
+        #region AUDIO
+
+        private void AllAudioDevices_Click(object sender, MouseButtonEventArgs e)
+        {
+            ListAudioDevices();
+        }
+
+        void ListAudioDevices()
+        {
+            cbx_deviceAudio.Items.Clear();
+            audioDevices = new Dictionary<string, CSCore.CoreAudioAPI.MMDevice>();
+
+            using (CSCore.CoreAudioAPI.MMDeviceCollection deviceCollection =
+                new CSCore.CoreAudioAPI.MMDeviceEnumerator().EnumAudioEndpoints(
+                    CSCore.CoreAudioAPI.DataFlow.Capture,
+                    CSCore.CoreAudioAPI.DeviceState.Active))
+            {
+                foreach (var device in deviceCollection)
+                {
+                    audioDevices.Add(device.FriendlyName, device);
+                    cbx_deviceAudio.Items.Add(device.FriendlyName);
+                }
+            }
+        }
+
+        private void Combobox_CaptureDeviceAudio_Change(object sender, SelectionChangedEventArgs e)
+        {
+            currentAudioDevice = audioDevices[cbx_deviceAudio.SelectedItem.ToString()];
+            CaptureAudio();
+        }
+
+        void CaptureAudio()
+        {
+            if (threadCaptureAudio != null && threadCaptureAudio.IsAlive)
+            {
+                threadCaptureAudio.Abort();
+                Thread.Sleep(100);
+            }
+            threadCaptureAudio = new Thread(new ThreadStart(CaptureAudioCallback));
+            threadCaptureAudio.Start();
+        }
+        void CaptureAudioStop()
+        {
+            if (isRunningCaptureAudio)
+            {
+                isRunningCaptureAudio = false;
+                Thread.Sleep(100);
+                threadCaptureAudio?.Abort();
+            }
+        }
+
+        void CaptureAudioCallback()
+        {
+            using (var soundIn = new CSCore.SoundIn.WasapiCapture(true, CSCore.CoreAudioAPI.AudioClientShareMode.Shared, 30))
+            {
+                soundIn.Device = currentAudioDevice;
+                soundIn.Initialize();
+                CSCore.IWaveSource source = new CSCore.Streams.SoundInSource(soundIn) { FillWithZeros = true };
+
+                soundIn.Start();
+
+                using (var soundOut = new CSCore.SoundOut.WasapiOut())
+                {
+                    soundOut.Initialize(source);
+                    soundOut.Play();
+
+                    isRunningCaptureAudio = true;
+                    while (isRunningCaptureAudio)
+                        Thread.Sleep(100);
+                }
+            }
+        }
+        #endregion
+
+        object lockobject = new object();
+
         #region IMAGE MANAGEMENT
         void Show(Mat frame)
         {
             if (!frame.Empty())
             {
-                Mat frameShowed;
+                GC.Collect();
 
-
-                if (actualWidth < frame.Width && actualWidth > 0)
+                lock (lockobject)
                 {
-                    frameShowed = new Mat();
-                    Cv2.Resize(frame, frameShowed, new OpenCvSharp.Size(actualWidth, actualWidth / frame.Width * frame.Height), interpolation: InterpolationFlags.Cubic);
+                    Mat frameShowed;
+                    if (actualWidth < frame.Width && actualWidth > 0)
+                    {
+                        frameShowed = new Mat();
+                        Cv2.Resize(frame, frameShowed, new OpenCvSharp.Size(actualWidth, actualWidth / frame.Width * frame.Height), interpolation: InterpolationFlags.Cubic);
+                    }
+                    else
+                        frameShowed = frame.Clone();
+
+                    try
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            IMS = OpenCvSharp.WpfExtensions.WriteableBitmapConverter.ToWriteableBitmap(frameShowed);
+                            //pb.Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(frameShowed);
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+
+                        MessageBox.Show(ex.Message);
+                    }
+
+
+                    //Application.Current.Dispatcher.Invoke(() =>
+                    //{
+                    //    try
+                    //    {
+
+                    //        //IMS = OpenCvSharp.WpfExtensions.WriteableBitmapConverter.ToWriteableBitmap(frameShowed);
+                    //    }
+                    //    catch (Exception ex)
+                    //    {
+                    //        MessageBox.Show(ex.Message);
+                    //    }
+                    //});
+                    _Infos = "(" + capture.FourCC + ") " + capture.FrameWidth + "*" + capture.FrameHeight + " [" + (int)capture.Fps + "fps] " + frameShowed.Width + "*" + frameShowed.Height;
+
                 }
-                else
-                    frameShowed = frame.Clone();
-
-                _imageSource = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(frameShowed);
-
-                _Infos = "(" + capture.FourCC + ") " + capture.FrameWidth + "*" + capture.FrameHeight + " [" + (int)capture.Fps + "fps] " + frameShowed.Width + "*" + frameShowed.Height;
             }
 
             FPS();
@@ -1095,7 +1252,12 @@ namespace VideoCapture
                 //par mat : (EN DEV)
                 filterframe = Cv2.ImRead(AppDomain.CurrentDomain.BaseDirectory + "filters\\" + filtername, ImreadModes.LoadGdal);//, ImreadModes.AnyColor);
 
-                imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe));
+                //imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe));
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    IMS_calque = OpenCvSharp.WpfExtensions.WriteableBitmapConverter.ToWriteableBitmap(filterframe);
+                });
             }
 
             foreach (var item in _filtres)
@@ -1567,7 +1729,7 @@ namespace VideoCapture
         {
             try
             {
-                string json = JsonConvert.SerializeObject(FILTRES, Formatting.Indented, 
+                string json = JsonConvert.SerializeObject(FILTRES, Formatting.Indented,
                     new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All });
                 File.WriteAllText(fichier_filtres, json);
             }
@@ -1607,5 +1769,6 @@ namespace VideoCapture
         #endregion
 
         #endregion
+
     }
 }
