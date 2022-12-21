@@ -144,34 +144,32 @@
 
                 </Grid>
             </StackPanel>
-            <StackPanel Width="200" Orientation="Vertical" >
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="40"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="50"/>
-                    </Grid.ColumnDefinitions>
-                    <Label Grid.Column="0" Content="Alpha"/>
-                    <Slider Grid.Column="1" VerticalAlignment="Center" Minimum="0" Maximum="1" TickFrequency="0.01" Value="{Binding currentFilter.Alpha}"/>
-                    <xtended:DoubleUpDown Grid.Column="2" Value="{Binding currentFilter.Alpha, UpdateSourceTrigger=PropertyChanged}"
+            <Grid Width="200" Height="25">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="50"/>
+                </Grid.ColumnDefinitions>
+                <Label Grid.Column="0" Content="Alpha" />
+                <Slider Grid.Column="1" Margin="2" VerticalAlignment="Center" Minimum="0" Maximum="1" LargeChange="0.01" Value="{Binding currentFilter.Alpha}"/>
+                <xtended:DoubleUpDown Grid.Column="2" Value="{Binding currentFilter.Alpha, UpdateSourceTrigger=PropertyChanged}"
                                           FormatString="F2" Minimum="0" Maximum="1" Increment="0.01" />
-                </Grid>
-            </StackPanel>
+            </Grid>
+            
             <Button Content="Set Position" Click="SetFilterPosition_Click" Height="30" Padding="5" Margin="5"/>
-            <StackPanel Width="180" Orientation="Vertical" >
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="40"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="50"/>
-                    </Grid.ColumnDefinitions>
-                    <Label Grid.Column="0" Content="Size"/>
-                    <Slider Grid.Column="1" VerticalAlignment="Center" Minimum="0.01" Maximum="10" TickFrequency="0.01" Value="{Binding currentFilter.ScaleFactor}"/>
-                    <xtended:DoubleUpDown Grid.Column="2" Value="{Binding currentFilter.ScaleFactor, UpdateSourceTrigger=PropertyChanged}"
-                                          FormatString="F2" Minimum="0.01" Maximum="10" Increment="0.01" />
-                </Grid>
+            
+            <Grid Width="180" Height="25">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="40"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="50"/>
+                </Grid.ColumnDefinitions>
+                <Label Grid.Column="0" Content="Size"/>
+                <Slider Grid.Column="1" Margin="2" VerticalAlignment="Center" Minimum="0.001" Maximum="1" LargeChange="0.01" Value="{Binding currentFilter.ScaleFactor}"/>
+                <xtended:DoubleUpDown Grid.Column="2" FormatString="F3" Minimum="0.001" Maximum="1" Increment="0.01"
+                                          Value="{Binding currentFilter.ScaleFactor, UpdateSourceTrigger=PropertyChanged}"/>
+            </Grid>
 
-            </StackPanel>
         </StackPanel>
 
         <!-- FORMULAIRE TEXTE -->

@@ -31,7 +31,6 @@ namespace VideoCapture
         const string version = "version 2022/12/18";
 
         #region VARIABLES & PARAMETERS
-
         bool AUTORELOAD = true;
 
         bool configLoading = false;
@@ -47,6 +46,7 @@ namespace VideoCapture
         CSCore.CoreAudioAPI.MMDevice currentAudioDevice;
         Thread threadCaptureAudio;
         bool isRunningCaptureAudio = false;
+        public float AudioVolume { get; set; } = 1f;
 
         // VIDEO
         Thread threadCapture;
@@ -62,10 +62,12 @@ namespace VideoCapture
         string formatName;
 
         // Image capturée
+        object lockobject = new object();
         Mat frame;
+        Mat frameShowed;
         long framereallygrabbed = 0;
         double frame_ratio = 3;
-        double actualWidth;
+        double _actualWidth;
         // flips & rotations
         bool flip_h;
         bool flip_v;
@@ -340,18 +342,17 @@ namespace VideoCapture
             if (WindowsScreenScale == 0) return;
             if (format == null) return;
 
-
-
             frame_ratio = (double)format.w / format.h;
 
             if (sizeInfo.WidthChanged)
-            {
                 Width = Width - image.Width + (sizeInfo.NewSize.Height * frame_ratio);
-                //Width = image.ActualWidth;
-            }
             else
-            {
                 Height = Height - image.Height + (sizeInfo.NewSize.Width / frame_ratio);
+
+            _actualWidth = Width;
+            if (_actualWidth == double.NaN)
+            {
+                bool quoi = true;
             }
         }
 
@@ -393,7 +394,7 @@ namespace VideoCapture
 
                 currentFilter.X = (GetMousePos.X) / (ActualWidth);
                 currentFilter.Y = (GetMousePos.Y) / (ActualHeight);
-                UpdateFilers();
+                //UpdateFilers();
 
                 return;
             }
@@ -457,7 +458,11 @@ namespace VideoCapture
             {
                 Width = frame.Width;
                 Height = frame.Height;
-                actualWidth = Width;
+                _actualWidth = Width;
+                if (_actualWidth == double.NaN)
+                {
+                    bool quoi = true;
+                }
             }
         }
 
@@ -492,8 +497,8 @@ namespace VideoCapture
         {
             ListVideoDevices();
             ListAudioDevices();
-            UpdateFilers();
-            ManageFilter("");
+            //UpdateFilers();
+            //ManageFilter("");
             FullScreenManagement();
             MouseEnterEventDelay_Init();
             WindowBarManagement();
@@ -523,6 +528,7 @@ namespace VideoCapture
         private void AllDevices_Click(object sender, MouseButtonEventArgs e)
         {
             ListVideoDevices();
+            ListAudioDevices();
         }
 
         void ListVideoDevices()
@@ -598,7 +604,7 @@ namespace VideoCapture
         }
         #endregion
 
-        #region CAPTURE VIDEO MANAGEMENT
+        #region VIDEO MANAGEMENT : CAPTURE & FILTRES
         void CaptureCamera(int index)
         {
             if (threadCapture != null && threadCapture.IsAlive)
@@ -705,11 +711,15 @@ namespace VideoCapture
                         capture.Set(VideoCaptureProperties.FourCC, FourCC.FromString(format.format));
 
                         frame_ratio = (double)format.w / format.h;
-                        actualWidth = format.w;
-                        Application.Current.Dispatcher.Invoke(() => { Width = actualWidth; });
+
+                        _actualWidth = format.w;
+                        if (_actualWidth == double.NaN)
+                        {
+                            bool quoi = true;
+                        }
+                        Application.Current.Dispatcher.Invoke(() => { Width = _actualWidth; });
 
                         capture.Read(frame);
-
                         Filter_Update();
 
                         newFormat = false;
@@ -739,13 +749,9 @@ namespace VideoCapture
             {
                 try
                 {
-                    if (filtres.Count > 0)
+                    if (filtres.Count > 0 && filterframe != null)
                     {
-                        Mat f;
-                        if (!filterframe.Empty())
-                            f = filterframe.Clone();
-                        else
-                            f = new Mat(frame.Size(), MatType.CV_8UC4);
+                        Mat f = filterframe.Clone();
 
                         if (filtres_aumoins1dynamic)
                         {
@@ -840,7 +846,8 @@ namespace VideoCapture
                     }
 
                     if (_FPS > 0)
-                        Thread.Sleep((int)(1000 / _FPS));
+                        Thread.Sleep(100);
+                    //Thread.Sleep((int)(1000 / _FPS));
                 }
                 catch (Exception ex)
                 {
@@ -851,12 +858,6 @@ namespace VideoCapture
         #endregion
 
         #region AUDIO
-
-        private void AllAudioDevices_Click(object sender, MouseButtonEventArgs e)
-        {
-            ListAudioDevices();
-        }
-
         void ListAudioDevices()
         {
             cbx_deviceAudio.Items.Clear();
@@ -918,13 +919,14 @@ namespace VideoCapture
 
                     isRunningCaptureAudio = true;
                     while (isRunningCaptureAudio)
+                    {
                         Thread.Sleep(100);
+                        soundOut.Volume = AudioVolume;
+                    }
                 }
             }
         }
         #endregion
-
-        object lockobject = new object();
 
         #region IMAGE MANAGEMENT
         void Show(Mat frame)
@@ -935,11 +937,10 @@ namespace VideoCapture
 
                 lock (lockobject)
                 {
-                    Mat frameShowed;
-                    if (actualWidth < frame.Width && actualWidth > 0)
+                    if (_actualWidth < frame.Width && _actualWidth > 0)
                     {
                         frameShowed = new Mat();
-                        Cv2.Resize(frame, frameShowed, new OpenCvSharp.Size(actualWidth, actualWidth / frame.Width * frame.Height), interpolation: InterpolationFlags.Cubic);
+                        Cv2.Resize(frame, frameShowed, new OpenCvSharp.Size(_actualWidth, _actualWidth / frame.Width * frame.Height), interpolation: InterpolationFlags.Cubic);
                     }
                     else
                         frameShowed = frame.Clone();
@@ -949,35 +950,21 @@ namespace VideoCapture
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             IMS = OpenCvSharp.WpfExtensions.WriteableBitmapConverter.ToWriteableBitmap(frameShowed);
-                            //pb.Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(frameShowed);
                         });
                     }
                     catch (Exception ex)
                     {
-
                         MessageBox.Show(ex.Message);
                     }
-
-
-                    //Application.Current.Dispatcher.Invoke(() =>
-                    //{
-                    //    try
-                    //    {
-
-                    //        //IMS = OpenCvSharp.WpfExtensions.WriteableBitmapConverter.ToWriteableBitmap(frameShowed);
-                    //    }
-                    //    catch (Exception ex)
-                    //    {
-                    //        MessageBox.Show(ex.Message);
-                    //    }
-                    //});
-                    _Infos = "(" + capture.FourCC + ") " + capture.FrameWidth + "*" + capture.FrameHeight + " [" + (int)capture.Fps + "fps] " + frameShowed.Width + "*" + frameShowed.Height;
-
                 }
+
+                if (ShowCPUMem)
+                    _Infos = "(" + capture.FourCC + ") " + capture.FrameWidth + "*" + capture.FrameHeight + " [" + (int)capture.Fps + "fps] " + frameShowed.Width + "*" + frameShowed.Height;
             }
 
             FPS();
         }
+
 
         void FPS()
         {
@@ -1053,7 +1040,6 @@ namespace VideoCapture
             ((MenuItem)sender).IsChecked = flip_v;
         }
 
-
         Mat RotationFlip(Mat frame, bool flip_h, bool flip_v, RotateFlags? rotation)
         {
             if (flip_h && flip_v)
@@ -1115,157 +1101,6 @@ namespace VideoCapture
         #endregion
 
         #region FILTERS \ Calque par dessus image
-
-        private void ctxm_filtreManager_Click(object sender, RoutedEventArgs e)
-        {
-            //Filtre_Manager filtre_manager = new Filtre_Manager();
-            //filtre_manager._Link(this);
-        }
-
-        void UpdateFilers()
-        {
-            _filtres = new Dictionary<string, MenuItem>();
-            ctxm_calque.Items.Clear();
-
-            // "Pick Filter"
-            StackPanel sp = new StackPanel() { Orientation = Orientation.Horizontal };
-            System.Windows.Controls.Image im = ImageFileToImageWPF("pack://application:,,,/Resources/folder.png");
-            im.Width = 20;
-            im.Height = 20;
-            System.Windows.Media.RenderOptions.SetBitmapScalingMode(im, System.Windows.Media.BitmapScalingMode.Fant);
-            sp.Children.Add(im);
-            ContentPresenter cp = new ContentPresenter();
-            cp.Margin = new Thickness(10, 0, 0, 0);
-            cp.Content = "Pick a filter";
-            sp.Children.Add(cp);
-            MenuItem mi_add = new MenuItem();
-            mi_add.Header = sp;
-            mi_add.Click += Mi_addfilter_Click;
-            ctxm_calque.Items.Add(mi_add);
-
-            // separateur
-            ctxm_calque.Items.Add(new Separator());
-
-            // "None"
-            MenuItem mi_none = new MenuItem() { Header = "None" };
-            mi_none.Click += Mi_none_Click;
-            ctxm_calque.Items.Add(mi_none);
-            mi_none.IsChecked = false;
-            _filtres.Add("", mi_none);
-
-            // "Filters"
-            if (Directory.Exists(dossierFiltres))
-            {
-                DirectoryInfo di = new DirectoryInfo(dossierFiltres);
-
-                Style stackPanelStyle = this.FindResource("HorizontalStackPanel") as Style;
-                foreach (FileInfo fi in di.GetFiles())
-                {
-                    sp = new StackPanel();
-                    sp.Style = stackPanelStyle;
-                    sp.Orientation = Orientation.Horizontal;
-                    im = ImageFileToImageWPF(fi.FullName);
-                    im.Width = 100;
-                    im.Height = 100;
-                    sp.Children.Add(im);
-                    cp = new ContentPresenter();
-                    cp.Content = fi.Name;
-                    sp.Children.Add(cp);
-                    MenuItem mi = new MenuItem();
-                    mi.Header = sp;
-                    mi.IsChecked = false;
-                    mi.Click += Mi_filter_Click;
-                    ctxm_calque.Items.Add(mi);
-                    _filtres.Add(fi.Name, mi);
-                }
-            }
-
-        }
-
-        System.Windows.Controls.Image ImageFileToImageWPF(string fullfilename)
-        {
-            return ImageFileToImageWPF(new Uri(fullfilename));
-        }
-
-        System.Windows.Controls.Image ImageFileToImageWPF(Uri uri)
-        {
-            System.Windows.Controls.Image myImage3 = new System.Windows.Controls.Image();
-            BitmapImage bi3 = new BitmapImage();
-            bi3.BeginInit();
-            bi3.UriSource = uri;
-            bi3.EndInit();
-            myImage3.Stretch = System.Windows.Media.Stretch.Fill;
-            myImage3.Source = bi3;
-            return myImage3;
-        }
-
-        void Mi_addfilter_Click(object sender, RoutedEventArgs e)
-        {
-            //selectionne fichier image
-            Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
-            if (openFileDialog.ShowDialog() == true)
-            {
-                string nom_fichier = openFileDialog.FileName;
-                FileInfo fi = new FileInfo(nom_fichier);
-                //copie fichier
-                fi = fi.CopyTo(AppDomain.CurrentDomain.BaseDirectory + "filters\\" + fi.Name, overwrite: true);
-                UpdateFilers();
-                ManageFilter(fi.Name);
-            }
-        }
-
-        void Mi_none_Click(object sender, RoutedEventArgs e)
-        {
-            ManageFilter("");
-        }
-
-        void Mi_filter_Click(object sender, RoutedEventArgs e)
-        {
-            MenuItem mi = (MenuItem)sender;
-            StackPanel sp = (StackPanel)mi.Header;
-            string filtername = "";
-            foreach (var item in sp.Children)
-            {
-                string child_typ = item.GetType().ToString();
-                if (child_typ == "System.Windows.Controls.ContentPresenter")
-                {
-                    filtername = (string)((ContentPresenter)item).Content;
-                    break;
-                }
-            }
-            ManageFilter(filtername);
-        }
-
-        void ManageFilter(string filtername)
-        {
-            this.filtername = filtername;
-            if (filtername == "")
-            {
-                filterframe = new Mat();
-                imagecalque.Source = null;
-            }
-            else
-            {
-                //imagecalque.Source = new BitmapImage(new Uri(AppDomain.CurrentDomain.BaseDirectory + "filters\\" + filtername));
-
-
-                //par mat : (EN DEV)
-                filterframe = Cv2.ImRead(AppDomain.CurrentDomain.BaseDirectory + "filters\\" + filtername, ImreadModes.LoadGdal);//, ImreadModes.AnyColor);
-
-                //imagecalque.Source = ImageProcessing.ImageConversion.Bitmap_to_ImageSource_2(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(filterframe));
-
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    IMS_calque = OpenCvSharp.WpfExtensions.WriteableBitmapConverter.ToWriteableBitmap(filterframe);
-                });
-            }
-
-            foreach (var item in _filtres)
-                item.Value.IsChecked = (item.Key == filtername);
-        }
-
-
-        //NEW GENERATION
         void FilterManager_INIT()
         {
             filtre_manager = new Filtre_Manager();
@@ -1275,6 +1110,7 @@ namespace VideoCapture
         private void FilterManager_Click(object sender, MouseButtonEventArgs e)
         {
             filtre_manager.Show();
+            filtre_manager.Activate();
         }
 
         public void Filter_Update()
@@ -1372,7 +1208,13 @@ namespace VideoCapture
                             var filterIndexer = filterMat4.GetIndexer();
 
                             Mat fi_mat_resized = new Mat();
-                            Cv2.Resize(fi.mat, fi_mat_resized, new OpenCvSharp.Size(), fx: fi.ScaleFactor, fy: fi.ScaleFactor, interpolation: InterpolationFlags.Cubic);
+
+                            //fi.ScaleFactor permet de mettre l'image du filtre à 100% de l'image visible
+                            //int H_target = frame.Height;
+
+
+                            double w_targeted = Math.Min(frame.Width, frame.Height) * fi.ScaleFactor;
+                            Cv2.Resize(fi.mat, fi_mat_resized, new OpenCvSharp.Size(w_targeted, w_targeted * fi.mat.Height / fi.mat.Width), interpolation: InterpolationFlags.Cubic);
 
                             switch (fi.mat.Channels())
                             {
@@ -1393,13 +1235,13 @@ namespace VideoCapture
                                             byte alpha = color.Item3;
                                             if (alpha == 0) continue;
 
-                                            //centré
+                                            //changement de repère : centré
                                             int X = (int)(fi.X * frame.Width) + x - fi_mat_resized.Width / 2;
                                             int Y = (int)(fi.Y * frame.Height) + y - fi_mat_resized.Height / 2;
 
-                                            if (X < 0 || Y < 0) continue;
-                                            if (X > frame.Width - 1 || Y > frame.Height - 1) continue;
-
+                                            //coordonné du pixel dans l'image ?
+                                            if (X < 0 || Y < 0 || X > frame.Width - 1 || Y > frame.Height - 1) continue;
+                                            color.Item3 = (byte)(fi.Alpha * color.Item3);
                                             filterIndexer[Y, X] = color;
                                         }
                                     }
@@ -1769,6 +1611,5 @@ namespace VideoCapture
         #endregion
 
         #endregion
-
     }
 }

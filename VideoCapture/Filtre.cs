@@ -21,7 +21,8 @@ namespace VideoCapture
         public bool isImage
         {
             get { return _isImage; }
-            set { 
+            set
+            {
                 _isImage = value;
                 OnPropertyChanged("isImage");
             }
@@ -117,6 +118,18 @@ namespace VideoCapture
             }
         }
         string _title3;
+
+        public Point XY
+        {
+            get { return xy; }
+            set
+            {
+                xy = value;
+                UpdateTitle();
+                OnPropertyChanged("XY");
+            }
+        }
+        Point xy;
 
         public double X
         {
