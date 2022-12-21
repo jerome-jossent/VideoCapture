@@ -11,6 +11,7 @@
         <local:BitmapToBitmapImageConverter x:Key="bitmapConverter"/>
     </UserControl.Resources>
     <Grid>
+        <!--TEXTE-->
         <Grid Visibility="{Binding isTxt, Converter={StaticResource BoolToVis}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="20"/>
@@ -22,7 +23,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <CheckBox Grid.Column="0" IsChecked="{Binding enable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+            <CheckBox Grid.Column="0" IsChecked="{Binding enable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center" />
 
             <Rectangle Grid.Column="1" Width="20" Height="20">
                 <Rectangle.Fill>
@@ -40,8 +41,9 @@
             <TextBlock Grid.Column="4" Text="{Binding title1}"/>
             <TextBlock Grid.Column="5" Text="{Binding title2}"/>
             <TextBlock Grid.Column="6" Text="{Binding title3}"/>
-        </Grid>        
-        
+        </Grid>
+
+        <!--IMAGE-->
         <Grid Visibility="{Binding isImage, Converter={StaticResource BoolToVis}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="20"/>
@@ -52,7 +54,7 @@
                 <ColumnDefinition Width="auto"/>
             </Grid.ColumnDefinitions>
 
-            <CheckBox Grid.Column="0" IsChecked="{Binding enable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+            <CheckBox Grid.Column="0" IsChecked="{Binding enable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center"/>
 
             <Image Grid.Column="1" Width="20" Height="20" Visibility="{Binding isImage, Converter={StaticResource BoolToVis}}"
                Source="{Binding _imageSource, Mode=OneWay, NotifyOnSourceUpdated=True, Converter={StaticResource bitmapConverter}}" RenderOptions.BitmapScalingMode="Fant"/>

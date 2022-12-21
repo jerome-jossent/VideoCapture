@@ -310,6 +310,7 @@
     <Resource Include="Resources\arrow_down.png" />
     <Resource Include="Resources\arrow_up.png" />
     <Resource Include="Resources\microphone.png" />
+    <Resource Include="Resources\arrowsNSEW.png" />
     <Content Include="Standard_UC_JJO.dll" />
     <Content Include="Standard_UC_JJO.pdb" />
     <Resource Include="Resources\Moins.png" />

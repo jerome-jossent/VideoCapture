@@ -86,12 +86,12 @@ namespace VideoCapture
         Filtre_Manager filtre_manager;
         Filtre currentFilter;
         Mat filterframe;
+        bool filterPositionning = false;
         bool filtres_aumoins1dynamic;
-        Dictionary<string, MenuItem> _filtres;
-        string dossierFiltres = AppDomain.CurrentDomain.BaseDirectory + "Filters";
-        string filtername;
+        System.Windows.Point XY_previous;
 
         // Fenêtre
+        bool _HideMenu_previousstatus;
         System.Windows.Threading.DispatcherTimer mouseEnterEventDelayTimer = new System.Windows.Threading.DispatcherTimer();
         double MouseEnter_Delay_sec = 3;
         double WindowsScreenScale;
@@ -360,6 +360,12 @@ namespace VideoCapture
         {
             if (filterPositionning)
             {
+                if (e.ChangedButton == MouseButton.Right)
+                {
+                    //reset positionning
+                    currentFilter.XY = XY_previous;
+                }
+
                 _HideMenu = _HideMenu_previousstatus;
                 filterPositionning = false;
             }
@@ -392,8 +398,8 @@ namespace VideoCapture
             {
                 System.Windows.Point GetMousePos = Mouse.GetPosition(this);
 
-                currentFilter.X = (GetMousePos.X) / (ActualWidth);
-                currentFilter.Y = (GetMousePos.Y) / (ActualHeight);
+                currentFilter.XY = new System.Windows.Point(GetMousePos.X / ActualWidth,
+                                                            GetMousePos.Y / ActualHeight);
                 //UpdateFilers();
 
                 return;
@@ -525,7 +531,7 @@ namespace VideoCapture
         }
 
         #region DEVICES VIDEO MANAGEMENT
-        private void AllDevices_Click(object sender, MouseButtonEventArgs e)
+        void AllDevices_Click(object sender, MouseButtonEventArgs e)
         {
             ListVideoDevices();
             ListAudioDevices();
@@ -549,7 +555,7 @@ namespace VideoCapture
             FiltreCamera();
         }
 
-        private void Combobox_CaptureDevice_Change(object sender, SelectionChangedEventArgs e)
+        void Combobox_CaptureDevice_Change(object sender, SelectionChangedEventArgs e)
         {
             indexDevice = cbx_device.SelectedIndex;
             current_device = devices[indexDevice];
@@ -760,7 +766,7 @@ namespace VideoCapture
                             {
                                 if (filtre.Dynamic && filtre.enable)
                                 {
-                                    OpenCvSharp.Point p = new OpenCvSharp.Point(filtre.X * filterframe.Width, filtre.Y * filterframe.Height);
+                                    OpenCvSharp.Point p = new OpenCvSharp.Point(filtre.XY.X * filterframe.Width, filtre.XY.Y * filterframe.Height);
                                     switch (filtre._type)
                                     {
                                         case Filtre.FiltreType.texte:
@@ -876,7 +882,7 @@ namespace VideoCapture
             }
         }
 
-        private void Combobox_CaptureDeviceAudio_Change(object sender, SelectionChangedEventArgs e)
+        void Combobox_CaptureDeviceAudio_Change(object sender, SelectionChangedEventArgs e)
         {
             currentAudioDevice = audioDevices[cbx_deviceAudio.SelectedItem.ToString()];
             CaptureAudio();
@@ -892,6 +898,7 @@ namespace VideoCapture
             threadCaptureAudio = new Thread(new ThreadStart(CaptureAudioCallback));
             threadCaptureAudio.Start();
         }
+
         void CaptureAudioStop()
         {
             if (isRunningCaptureAudio)
@@ -964,7 +971,6 @@ namespace VideoCapture
 
             FPS();
         }
-
 
         void FPS()
         {
@@ -1059,7 +1065,6 @@ namespace VideoCapture
 
             return frame;
         }
-
         #endregion
 
         #region CROP
@@ -1126,7 +1131,7 @@ namespace VideoCapture
                     if (!f.enable)
                         continue;
 
-                    OpenCvSharp.Point p = new OpenCvSharp.Point(f.X * filterframe.Width, f.Y * filterframe.Height);
+                    OpenCvSharp.Point p = new OpenCvSharp.Point(f.XY.X * filterframe.Width, f.XY.Y * filterframe.Height);
 
                     switch (f._type)
                     {
@@ -1206,27 +1211,13 @@ namespace VideoCapture
 
                             //resize de l'image du filtre image
                             Mat fi_mat_resized = new Mat();
-                            double w_targeted_1 = frame.Width * fi.ScaleFactor;
-                            double h_targeted_1 = w_targeted_1 * fi.mat.Height / fi.mat.Width;
-
-                            double h_targeted_2 = frame.Height * fi.ScaleFactor;
-                            double w_targeted_2 = h_targeted_2 * fi.mat.Width / fi.mat.Height;
-
-                            double w_targeted = 1;
-                            double h_targeted = 1;
-
-                            if (h_targeted_1 > frame.Height)
+                            double w_targeted = frame.Width * fi.ScaleFactor;
+                            double h_targeted = w_targeted * fi.mat.Height / fi.mat.Width;
+                            if (h_targeted > frame.Height)
                             {
-                                w_targeted = w_targeted_2;
-                                h_targeted = h_targeted_2;
+                                h_targeted = frame.Height * fi.ScaleFactor;
+                                w_targeted = h_targeted * fi.mat.Width / fi.mat.Height;
                             }
-                            else
-                            {
-                                w_targeted = w_targeted_1;
-                                h_targeted = h_targeted_1;
-                            }
-
-
 
                             Cv2.Resize(fi.mat, fi_mat_resized, new OpenCvSharp.Size(w_targeted, h_targeted), interpolation: InterpolationFlags.Cubic);
 
@@ -1245,8 +1236,8 @@ namespace VideoCapture
                                         for (int x = 0; x < fi_mat_resized.Width; x++)
                                         {
                                             //changement de repère : centré
-                                            int X = (int)(fi.X * frame.Width) + x - fi_mat_resized.Width / 2;
-                                            int Y = (int)(fi.Y * frame.Height) + y - fi_mat_resized.Height / 2;
+                                            int X = (int)(fi.XY.X * frame.Width) + x - fi_mat_resized.Width / 2;
+                                            int Y = (int)(fi.XY.Y * frame.Height) + y - fi_mat_resized.Height / 2;
 
                                             //coordonné du pixel dans l'image ?
                                             if (X < 0 || Y < 0 || X > frame.Width - 1 || Y > frame.Height - 1) continue;
@@ -1272,8 +1263,8 @@ namespace VideoCapture
                                             if (alpha == 0) continue;
 
                                             //changement de repère : centré
-                                            int X = (int)(fi.X * frame.Width) + x - fi_mat_resized.Width / 2;
-                                            int Y = (int)(fi.Y * frame.Height) + y - fi_mat_resized.Height / 2;
+                                            int X = (int)(fi.XY.X * frame.Width) + x - fi_mat_resized.Width / 2;
+                                            int Y = (int)(fi.XY.Y * frame.Height) + y - fi_mat_resized.Height / 2;
 
                                             //coordonné du pixel dans l'image ?
                                             if (X < 0 || Y < 0 || X > frame.Width - 1 || Y > frame.Height - 1) continue;
@@ -1296,33 +1287,31 @@ namespace VideoCapture
             {
 
             }
-
-            //Cv2.NamedWindow("e");
-            //Cv2.ImShow("e", filterframe);
-            //Cv2.WaitKey();
         }
 
-        bool filterPositionning = false;
-        bool _HideMenu_previousstatus;
-
-        public void SetFilterPosition(Filtre currentFilter)
+        void ShowMatDebug(Mat frame)
         {
-            this.currentFilter = currentFilter;
+            Cv2.NamedWindow("Debug");
+            Cv2.ImShow("Debug", frame);
+            Cv2.WaitKey();
+        }
+
+        public void SetFilterPosition(Filtre movingFilter)
+        {
+            currentFilter = movingFilter;
             currentFilter.enable = true;
+            XY_previous = currentFilter.XY;
 
             //positionner la souris sur la video
-            double x = WindowsScreenScale * (this.Left + currentFilter.X * ActualWidth);
-            double y = WindowsScreenScale * (this.Top + currentFilter.Y * ActualHeight);
+            double x = WindowsScreenScale * (this.Left + currentFilter.XY.X * ActualWidth);
+            double y = WindowsScreenScale * (this.Top + currentFilter.XY.Y * ActualHeight);
             SetCursorPos((int)x, (int)y);
-
 
             _HideMenu_previousstatus = _HideMenu;
             _HideMenu = false;
             filterPositionning = true;
             this.Activate();
         }
-
-
         #endregion
 
         #region SCREENSHOT
@@ -1408,8 +1397,6 @@ namespace VideoCapture
         #endregion
 
         #region DPI
-
-
         [System.Runtime.InteropServices.DllImport("gdi32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto, SetLastError = true, ExactSpelling = true)]
         public static extern int GetDeviceCaps(IntPtr hDC, int nIndex);
 
@@ -1423,7 +1410,6 @@ namespace VideoCapture
             /// Logical pixels inch in Y
             /// </summary>
             LOGPIXELSY = 90
-
             // Other constants may be founded on pinvoke.net
         }
 
@@ -1438,8 +1424,6 @@ namespace VideoCapture
         #endregion
 
         #region CAMERA SETTINGS
-
-
         //A (modified) definition of OleCreatePropertyFrame found here: http://groups.google.no/group/microsoft.public.dotnet.languages.csharp/browse_thread/thread/db794e9779144a46/55dbed2bab4cd772?lnk=st&q=[DllImport(%22olepro32.dll%22)]&rnum=1&hl=no#55dbed2bab4cd772
         [System.Runtime.InteropServices.DllImport("oleaut32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, ExactSpelling = true)]
         public static extern int OleCreatePropertyFrame(
@@ -1456,11 +1440,7 @@ namespace VideoCapture
             int dwReserved,
             IntPtr lpvReserved);
 
-
-
-
-
-        private void CAMERA_SETTINGS_Click(object sender, MouseButtonEventArgs e)
+        void CAMERA_SETTINGS_Click(object sender, MouseButtonEventArgs e)
         {
             string name = current_device.Name;
 
@@ -1549,7 +1529,7 @@ namespace VideoCapture
         /// <param name="category">Category of the filter</param>
         /// <param name="friendlyname">Friendly name of the filter</param>
         /// <returns>IBaseFilter for the device</returns>
-        private DirectShowLib.IBaseFilter CreateFilter(Guid category, string friendlyname)
+        DirectShowLib.IBaseFilter CreateFilter(Guid category, string friendlyname)
         {
             object source = null;
             Guid iid = typeof(DirectShowLib.IBaseFilter).GUID;

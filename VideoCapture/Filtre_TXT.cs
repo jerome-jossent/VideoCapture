@@ -210,8 +210,7 @@ namespace VideoCapture
 
         public Filtre_TXT()
         {
-            X = 0.5;
-            Y = 0.5;
+            XY = new System.Windows.Point(0.5, 0.5);
             _type = FiltreType.texte;
             origine = TypeOrigine.DownLeft;
             isTxt = true;
@@ -221,7 +220,7 @@ namespace VideoCapture
 
         public override void UpdateTitle()
         {
-            title = "xy [" + X.ToString("0.000") + "|" + Y.ToString("0.000") + "]";
+            title = "xy [" + XY.X.ToString("0.000") + "|" + XY.Y.ToString("0.000") + "]";
             string o = origine.ToString();
             title1 = new string(o.Where(c => char.IsUpper(c)).ToArray());
             title2 = (Dynamic ? "[D] " : "[S] ");

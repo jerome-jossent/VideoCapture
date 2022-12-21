@@ -15,7 +15,7 @@ namespace VideoCapture
         protected void OnPropertyChanged(string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }//title    ScaleFactor X   Y
+        }
 
         [JsonIgnore]
         public bool isImage
@@ -130,30 +130,6 @@ namespace VideoCapture
             }
         }
         Point xy;
-
-        public double X
-        {
-            get { return x; }
-            set
-            {
-                x = value;
-                UpdateTitle();
-                OnPropertyChanged("X");
-            }
-        }
-        double x;
-
-        public double Y
-        {
-            get { return y; }
-            set
-            {
-                y = value;
-                UpdateTitle();
-                OnPropertyChanged("Y");
-            }
-        }
-        double y;
 
         public abstract void UpdateTitle();
 

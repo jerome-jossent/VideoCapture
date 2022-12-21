@@ -12,8 +12,7 @@ namespace VideoCapture
         public Filtre_IMAGE()
         {
             _type = FiltreType.image;
-            X = 0.5;
-            Y = 0.5;
+            XY = new System.Windows.Point(0.5, 0.5);
             origine = TypeOrigine.Middle;
             isImage = true;
             OnPropertyChanged("isTxt");
@@ -82,11 +81,7 @@ namespace VideoCapture
 
         public override void UpdateTitle()
         {
-            title = "xy [" + X.ToString("0.000") + "|" + Y.ToString("0.000") + "]";
-            //string o = origine.ToString();
-            //title1 = new string(o.Where(c => char.IsUpper(c)).ToArray());
-            //title2 = (Dynamic ? "[D] " : "[S] ");
-            //title3 = "Filtre_IMAGE";
+            title = "xy [" + XY.X.ToString("0.000") + "|" + XY.Y.ToString("0.000") + "]";
         }
         
         void LoadImage()

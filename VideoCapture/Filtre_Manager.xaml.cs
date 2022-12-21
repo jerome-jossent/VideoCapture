@@ -157,6 +157,7 @@ namespace VideoCapture
 
         public void FilterPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == "title") return;
             mainWindow.Filter_Update();
         }
 
@@ -187,6 +188,7 @@ namespace VideoCapture
             currentFilter = f;
             f.PropertyChanged += FilterPropertyChanged;
             mainWindow.Filter_Update();
+            PickFile();
         }
 
         void btn_add_text_click(object sender, RoutedEventArgs e)
@@ -250,6 +252,11 @@ namespace VideoCapture
             mainWindow.SetFilterPosition(currentFilter);
         }
 
+        void SetFilterPosition__Click(object sender, MouseButtonEventArgs e)
+        {
+            mainWindow.SetFilterPosition(currentFilter);
+        }
+
         void btn_filtre_save_Click(object sender, RoutedEventArgs e)
         {
             mainWindow.Config_Filters_Save();
@@ -265,6 +272,11 @@ namespace VideoCapture
         {
             if (currentFilter == null) return;
             if (currentFilter._type != Filtre.FiltreType.image) return;
+            PickFile();
+        }
+
+        void PickFile()
+        {
             Filtre_IMAGE fi = (Filtre_IMAGE)currentFilter;
 
             using (var dialog = new System.Windows.Forms.OpenFileDialog())
@@ -276,5 +288,6 @@ namespace VideoCapture
                 }
             }
         }
+
     }
 }
