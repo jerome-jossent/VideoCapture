@@ -1204,35 +1204,71 @@ namespace VideoCapture
                             if (fi.mat == null)
                                 break;
 
+                            //resize de l'image du filtre image
+                            Mat fi_mat_resized = new Mat();
+                            double w_targeted_1 = frame.Width * fi.ScaleFactor;
+                            double h_targeted_1 = w_targeted_1 * fi.mat.Height / fi.mat.Width;
+
+                            double h_targeted_2 = frame.Height * fi.ScaleFactor;
+                            double w_targeted_2 = h_targeted_2 * fi.mat.Width / fi.mat.Height;
+
+                            double w_targeted = 1;
+                            double h_targeted = 1;
+
+                            if (h_targeted_1 > frame.Height)
+                            {
+                                w_targeted = w_targeted_2;
+                                h_targeted = h_targeted_2;
+                            }
+                            else
+                            {
+                                w_targeted = w_targeted_1;
+                                h_targeted = h_targeted_1;
+                            }
+
+
+
+                            Cv2.Resize(fi.mat, fi_mat_resized, new OpenCvSharp.Size(w_targeted, h_targeted), interpolation: InterpolationFlags.Cubic);
+
+                            //accès aux pixels : lecture image du filtre resizé et écriture filterframe
                             var filterMat4 = new Mat<Vec4b>(filterframe);
                             var filterIndexer = filterMat4.GetIndexer();
-
-                            Mat fi_mat_resized = new Mat();
-
-                            //fi.ScaleFactor permet de mettre l'image du filtre à 100% de l'image visible
-                            //int H_target = frame.Height;
-
-
-                            double w_targeted = Math.Min(frame.Width, frame.Height) * fi.ScaleFactor;
-                            Cv2.Resize(fi.mat, fi_mat_resized, new OpenCvSharp.Size(w_targeted, w_targeted * fi.mat.Height / fi.mat.Width), interpolation: InterpolationFlags.Cubic);
-
+                            byte alpha;
                             switch (fi.mat.Channels())
                             {
                                 case 3:
+                                    var mat3 = new Mat<Vec3b>(fi_mat_resized);
+                                    var indexer3 = mat3.GetIndexer();
+                                    alpha = (byte)(255 * fi.Alpha);
+                                    for (int y = 0; y < fi_mat_resized.Height; y++)
+                                    {
+                                        for (int x = 0; x < fi_mat_resized.Width; x++)
+                                        {
+                                            //changement de repère : centré
+                                            int X = (int)(fi.X * frame.Width) + x - fi_mat_resized.Width / 2;
+                                            int Y = (int)(fi.Y * frame.Height) + y - fi_mat_resized.Height / 2;
 
+                                            //coordonné du pixel dans l'image ?
+                                            if (X < 0 || Y < 0 || X > frame.Width - 1 || Y > frame.Height - 1) continue;
+
+                                            Vec3b color_origine = indexer3[y, x];
+                                            Vec4b color_dest = new Vec4b() { Item0 = color_origine.Item0, Item1 = color_origine.Item1, Item2 = color_origine.Item2, Item3 = alpha };
+                                            filterIndexer[Y, X] = color_dest;
+                                        }
+                                    }
                                     break;
 
                                 case 4:
                                     var mat4 = new Mat<Vec4b>(fi_mat_resized);
-                                    var indexer = mat4.GetIndexer();
+                                    var indexer4 = mat4.GetIndexer();
 
                                     for (int y = 0; y < fi_mat_resized.Height; y++)
                                     {
                                         for (int x = 0; x < fi_mat_resized.Width; x++)
                                         {
-                                            Vec4b color = indexer[y, x];
+                                            Vec4b color = indexer4[y, x];
 
-                                            byte alpha = color.Item3;
+                                            alpha = color.Item3;
                                             if (alpha == 0) continue;
 
                                             //changement de repère : centré
@@ -1272,6 +1308,8 @@ namespace VideoCapture
         public void SetFilterPosition(Filtre currentFilter)
         {
             this.currentFilter = currentFilter;
+            currentFilter.enable = true;
+
             //positionner la souris sur la video
             double x = WindowsScreenScale * (this.Left + currentFilter.X * ActualWidth);
             double y = WindowsScreenScale * (this.Top + currentFilter.Y * ActualHeight);
