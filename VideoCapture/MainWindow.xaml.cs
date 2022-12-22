@@ -86,6 +86,7 @@ namespace VideoCapture
         Filtre_Manager filtre_manager;
         Filtre currentFilter;
         Mat filterframe;
+        Mat filterframe_dynamic;
         bool filterPositionning = false;
         bool filtres_aumoins1dynamic;
         System.Windows.Point XY_previous;
@@ -757,7 +758,7 @@ namespace VideoCapture
                 {
                     if (filtres.Count > 0 && filterframe != null)
                     {
-                        Mat f = filterframe.Clone();
+                        filterframe_dynamic = filterframe.Clone();
 
                         if (filtres_aumoins1dynamic)
                         {
@@ -828,12 +829,12 @@ namespace VideoCapture
                                             {
                                                 //bordure
                                                 Scalar ftcolor_border = new Scalar(ft.color_Border.B, ft.color_Border.G, ft.color_Border.R, ft.color_Border.A);
-                                                Cv2.PutText(f, txt, p, ft.font, ft.FontScale, ftcolor_border, ft.FontThickness_Border, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
-                                                Cv2.PutText(f, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                                                Cv2.PutText(filterframe_dynamic, txt, p, ft.font, ft.FontScale, ftcolor_border, ft.FontThickness_Border, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                                                Cv2.PutText(filterframe_dynamic, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
                                             }
                                             else
                                             {
-                                                Cv2.PutText(f, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
+                                                Cv2.PutText(filterframe_dynamic, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
                                             }
                                             break;
 
@@ -844,10 +845,10 @@ namespace VideoCapture
                                 }
                             }
                         }
-                        if (!f.Empty())
+                        if (!filterframe_dynamic.Empty())
                             Application.Current.Dispatcher.Invoke(() =>
                             {
-                                IMS_calque = OpenCvSharp.WpfExtensions.WriteableBitmapConverter.ToWriteableBitmap(f);
+                                IMS_calque = OpenCvSharp.WpfExtensions.WriteableBitmapConverter.ToWriteableBitmap(filterframe_dynamic);
                             });
                     }
 
@@ -1221,6 +1222,10 @@ namespace VideoCapture
 
                             Cv2.Resize(fi.mat, fi_mat_resized, new OpenCvSharp.Size(w_targeted, h_targeted), interpolation: InterpolationFlags.Cubic);
 
+                            //ogoMat.copyTo(frame, matList[3]); ???????????????
+                            //.????????????????????????????????????????????????
+
+
                             //accès aux pixels : lecture image du filtre resizé et écriture filterframe
                             var filterMat4 = new Mat<Vec4b>(filterframe);
                             var filterIndexer = filterMat4.GetIndexer();
@@ -1339,19 +1344,48 @@ namespace VideoCapture
             if (ScreenshotFolder != null && System.IO.Directory.Exists(ScreenshotFolder))
                 if (frame != null && !frame.Empty())
                 {
-                    Mat screenshot = null;
-                    if (ckb_savewithfilter.IsChecked == true && !filterframe.Empty())
+                    Mat screenshot = frame.Clone();
+                    if (ckb_savewithfilter.IsChecked == true && !filterframe_dynamic.Empty())
                     {
+                        Mat filter_frame = filterframe_dynamic.Clone();
 
-                        throw new Exception("TODO");
-                        //frame
-                        //filterframe
+                        //convertir frame en 4 channels
+                        Mat frame4 = new Mat(screenshot.Size(), MatType.CV_8UC4);
+                        Cv2.CvtColor(screenshot, frame4, ColorConversionCodes.RGB2RGBA);
 
-                        //screenshot
-                    }
-                    else
-                    {
-                        screenshot = frame.Clone();
+                        var mat_capture = new Mat<Vec4b>(frame4);
+                        var indexer_capture = mat_capture.GetIndexer();
+                        var mat_filter = new Mat<Vec4b>(filter_frame);
+                        var indexer_filter = mat_filter.GetIndexer();
+
+                        for (int y = 0; y < screenshot.Height; y++)
+                        {
+                            for (int x = 0; x < screenshot.Width; x++)
+                            {
+                                Vec4b pix_filter = indexer_filter[y, x];
+                                byte alpha = pix_filter.Item3;
+                                
+                                float coeff = (float)alpha / 255;
+
+                                pix_filter = new Vec4b((byte)(pix_filter.Item0 * coeff),
+                                                       (byte)(pix_filter.Item1 * coeff),
+                                                       (byte)(pix_filter.Item2 * coeff),
+                                                       alpha);
+                                indexer_filter[y, x] = pix_filter;
+
+                                coeff = 1 - coeff;
+
+                                Vec4b pix_capture = indexer_capture[y, x];
+                                pix_capture = new Vec4b((byte)(pix_capture.Item0 * coeff),
+                                                        (byte)(pix_capture.Item1 * coeff),
+                                                        (byte)(pix_capture.Item2 * coeff),
+                                                        (byte)(255 - alpha));
+                                indexer_capture[y, x] = pix_capture;
+                            }
+                        }
+
+                        //Cv2.AddWeighted(mat_capture, 1, mat_filter, 1, 0, screenshot);
+                        screenshot = mat_capture + mat_filter;
                     }
                     string extension = ".jpg";
                     string filename = ScreenshotFolder + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss.fff") + extension;
