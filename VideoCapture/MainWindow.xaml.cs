@@ -755,6 +755,8 @@ namespace VideoCapture
             {
                 try
                 {
+                    int wait_ms = 100;
+                    DateTime T0 = DateTime.Now;
                     if (filtres.Count > 0 && filterframe != null)
                     {
                         filterframe_dynamic = filterframe.Clone();
@@ -766,13 +768,12 @@ namespace VideoCapture
                             {
                                 if (filtre.Dynamic && filtre.enable)
                                 {
-                                    OpenCvSharp.Point p = new OpenCvSharp.Point(filtre.XY.X * filterframe.Width, filtre.XY.Y * filterframe.Height);
                                     switch (filtre._type)
                                     {
+                                        #region "texte"
                                         case Filtre.FiltreType.texte:
                                             Filtre_TXT ft = (Filtre_TXT)filtre;
 
-                                            Scalar ftcolor = new Scalar(ft.color.B, ft.color.G, ft.color.R, ft.color.A);
                                             string txt = "";
                                             switch (ft.filtre_TXT_Type)
                                             {
@@ -798,49 +799,30 @@ namespace VideoCapture
                                                     txt = _FPS.ToString("f2");
                                                     break;
                                             }
+                                            ft.InsertText(filterframe_dynamic, txt);
 
-                                            int FontThickness_MAX;
-                                            if (ft.Border)
-                                            {
-                                                FontThickness_MAX = ft.FontThickness_Border;
-                                                if (ft.FontThickness > FontThickness_MAX)
-                                                    FontThickness_MAX = ft.FontThickness;
-                                            }
-                                            else
-                                            {
-                                                FontThickness_MAX = ft.FontThickness;
-                                            }
-                                            OpenCvSharp.Size textsize = Cv2.GetTextSize(txt, ft.font, ft.FontScale, FontThickness_MAX, out int Y_baseline);
-                                            ft.Size = new System.Windows.Size((double)textsize.Width / filterframe_dynamic.Width, (double)textsize.Height / filterframe_dynamic.Height);
-
-                                            switch (ft.origine)
-                                            {
-                                                case Filtre.TypeOrigine.UpLeft: p.Y += textsize.Height; break;
-                                                case Filtre.TypeOrigine.UpMiddle: p.Y += textsize.Height; p.X -= textsize.Width / 2; break;
-                                                case Filtre.TypeOrigine.UpRight: p.Y += textsize.Height; p.X -= textsize.Width; break;
-                                                case Filtre.TypeOrigine.MiddleLeft: p.Y += textsize.Height / 2; break;
-                                                case Filtre.TypeOrigine.Middle: p.Y += textsize.Height / 2; p.X -= textsize.Width / 2; break;
-                                                case Filtre.TypeOrigine.MiddleRight: p.Y += textsize.Height / 2; p.X -= textsize.Width; break;
-                                                case Filtre.TypeOrigine.DownLeft: break;
-                                                case Filtre.TypeOrigine.DownMiddle: p.X -= textsize.Width / 2; break;
-                                                case Filtre.TypeOrigine.DownRight: p.X -= textsize.Width; break;
-                                            }
-                                            if (ft.Border)
-                                            {
-                                                //bordure
-                                                Scalar ftcolor_border = new Scalar(ft.color_Border.B, ft.color_Border.G, ft.color_Border.R, ft.color_Border.A);
-                                                Cv2.PutText(filterframe_dynamic, txt, p, ft.font, ft.FontScale, ftcolor_border, ft.FontThickness_Border, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
-                                                Cv2.PutText(filterframe_dynamic, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
-                                            }
-                                            else
-                                            {
-                                                Cv2.PutText(filterframe_dynamic, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
-                                            }
                                             break;
+                                        #endregion
 
+                                        #region "image"
                                         case Filtre.FiltreType.image:
+                                            Filtre_IMAGE fi = (Filtre_IMAGE)filtre;
+                                            OpenCvSharp.Point pi = new OpenCvSharp.Point(filtre.XY.X * filterframe.Width, filtre.XY.Y * filterframe.Height);
 
+                                            //lit la prochaine frame
+                                            try
+                                            {
+                                                fi.videoCapture.Read(fi.mat);
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                throw;
+                                                //relire depuis le début ?
+                                            }
+                                            fi.InsertMat(filterframe_dynamic);
+                                            wait_ms = (int)(1000 / fi.videoCapture.Fps);
                                             break;
+                                            #endregion
                                     }
                                 }
                             }
@@ -851,14 +833,13 @@ namespace VideoCapture
                                 IMS_calque = OpenCvSharp.WpfExtensions.WriteableBitmapConverter.ToWriteableBitmap(filterframe_dynamic);
                             });
                     }
-
+                    int need_to_wait_ms = wait_ms - (int)DateTime.Now.Subtract(T0).TotalMilliseconds;
                     if (_FPS > 0)
-                        Thread.Sleep(100);
+                        Thread.Sleep(wait_ms);//100
                     //Thread.Sleep((int)(1000 / _FPS));
                 }
                 catch (Exception ex)
                 {
-
                 }
             }
         }
@@ -1132,170 +1113,25 @@ namespace VideoCapture
                     if (!f.enable)
                         continue;
 
-                    OpenCvSharp.Point p = new OpenCvSharp.Point(f.XY.X * filterframe.Width, f.XY.Y * filterframe.Height);
-
                     switch (f._type)
                     {
-                        #region "texte"
                         case Filtre.FiltreType.texte:
                             Filtre_TXT ft = (Filtre_TXT)f;
-                            if (ft.Static)
-                            {
-                                Scalar ftcolor = new Scalar(ft.color.B, ft.color.G, ft.color.R, ft.color.A);
-                                string txt = "";
-                                switch (ft.filtre_TXT_Type)
-                                {
-                                    case Filtre_TXT.Filtre_TXT_Type.Free:
-                                        if (ft.txt == null || ft.txt == "")
-                                            continue;
-
-                                        txt = ft.txt;
-                                        break;
-                                    case Filtre_TXT.Filtre_TXT_Type.DeviceName:
-                                        txt = current_device.Name;
-                                        break;
-                                    default:
-                                        break;
-                                }
-
-                                int FontThickness_MAX;
-                                if (ft.Border)
-                                {
-                                    FontThickness_MAX = ft.FontThickness_Border;
-                                    if (ft.FontThickness > FontThickness_MAX)
-                                        FontThickness_MAX = ft.FontThickness;
-                                }
-                                else
-                                {
-                                    FontThickness_MAX = ft.FontThickness;
-                                }
-                                OpenCvSharp.Size textsize = Cv2.GetTextSize(txt, ft.font, ft.FontScale, FontThickness_MAX, out int Y_baseline);
-                                ft.Size = new System.Windows.Size((double)textsize.Width / filterframe.Width, (double)textsize.Height / filterframe.Height);
-
-                                switch (ft.origine)
-                                {
-                                    case Filtre.TypeOrigine.UpLeft: p.Y += textsize.Height; break;
-                                    case Filtre.TypeOrigine.UpMiddle: p.Y += textsize.Height; p.X -= textsize.Width / 2; break;
-                                    case Filtre.TypeOrigine.UpRight: p.Y += textsize.Height; p.X -= textsize.Width; break;
-                                    case Filtre.TypeOrigine.MiddleLeft: p.Y += textsize.Height / 2; break;
-                                    case Filtre.TypeOrigine.Middle: p.Y += textsize.Height / 2; p.X -= textsize.Width / 2; break;
-                                    case Filtre.TypeOrigine.MiddleRight: p.Y += textsize.Height / 2; p.X -= textsize.Width; break;
-                                    case Filtre.TypeOrigine.DownLeft: break;
-                                    case Filtre.TypeOrigine.DownMiddle: p.X -= textsize.Width / 2; break;
-                                    case Filtre.TypeOrigine.DownRight: p.X -= textsize.Width; break;
-                                }
-                                if (ft.Border)
-                                {
-                                    //bordure
-                                    Scalar ftcolor_border = new Scalar(ft.color_Border.B, ft.color_Border.G, ft.color_Border.R, ft.color_Border.A);
-                                    Cv2.PutText(filterframe, txt, p, ft.font, ft.FontScale, ftcolor_border, ft.FontThickness_Border, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
-                                    Cv2.PutText(filterframe, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
-                                }
-                                else
-                                {
-                                    Cv2.PutText(filterframe, txt, p, ft.font, ft.FontScale, ftcolor, ft.FontThickness, lineType: LineTypes.AntiAlias, bottomLeftOrigin: false);
-                                }
-                            }
-                            if (ft.Dynamic)
-                            {
-                                filtres_aumoins1dynamic = true;
-                            }
-
+                            ft.InsertText(filterframe, current_device);
                             break;
-                        #endregion
 
-                        #region "image"
                         case Filtre.FiltreType.image:
                             Filtre_IMAGE fi = (Filtre_IMAGE)f;
-
-                            if (fi.mat == null)
-                                break;
-
-                            //resize de l'image du filtre image
-                            Mat fi_mat_resized = new Mat();
-                            double w_targeted = frame.Width * fi.ScaleFactor;
-                            double h_targeted = w_targeted * fi.mat.Height / fi.mat.Width;
-                            if (h_targeted > frame.Height)
-                            {
-                                h_targeted = frame.Height * fi.ScaleFactor;
-                                w_targeted = h_targeted * fi.mat.Width / fi.mat.Height;
-                            }
-                            fi.Size = new System.Windows.Size((double)w_targeted / filterframe.Width, (double)h_targeted / filterframe.Height);
-
-                            Cv2.Resize(fi.mat, fi_mat_resized, new OpenCvSharp.Size(w_targeted, h_targeted), interpolation: InterpolationFlags.Cubic);
-
-                            //ogoMat.copyTo(frame, matList[3]); ???????????????
-                            //.????????????????????????????????????????????????
-
-
-                            //accès aux pixels : lecture image du filtre resizé et écriture filterframe
-                            var filterMat4 = new Mat<Vec4b>(filterframe);
-                            var filterIndexer = filterMat4.GetIndexer();
-                            byte alpha;
-                            System.Windows.Point V = Filtre.OrigineToDirection(fi.origine);
-
-                            switch (fi.mat.Channels())
-                            {
-                                case 3:
-                                    var mat3 = new Mat<Vec3b>(fi_mat_resized);
-                                    var indexer3 = mat3.GetIndexer();
-
-                                    alpha = (byte)(255 * fi.Alpha);
-                                    for (int y = 0; y < fi_mat_resized.Height; y++)
-                                    {
-                                        for (int x = 0; x < fi_mat_resized.Width; x++)
-                                        {
-                                            //changement de repère : Dépend de l'origine
-                                            int X = (int)(fi.XY.X * frame.Width) + x - (int)(fi_mat_resized.Width * (V.X + 1) / 2);
-                                            int Y = (int)(fi.XY.Y * frame.Height) + y - (int)(fi_mat_resized.Height * (V.Y + 1) / 2);
-
-                                            //coordonné du pixel dans l'image ?
-                                            if (X < 0 || Y < 0 || X > frame.Width - 1 || Y > frame.Height - 1) continue;
-
-                                            Vec3b color_origine = indexer3[y, x];
-                                            Vec4b color_dest = new Vec4b() { Item0 = color_origine.Item0, Item1 = color_origine.Item1, Item2 = color_origine.Item2, Item3 = alpha };
-                                            filterIndexer[Y, X] = color_dest;
-                                        }
-                                    }
-                                    break;
-
-                                case 4:
-                                    var mat4 = new Mat<Vec4b>(fi_mat_resized);
-                                    var indexer4 = mat4.GetIndexer();
-
-                                    for (int y = 0; y < fi_mat_resized.Height; y++)
-                                    {
-                                        for (int x = 0; x < fi_mat_resized.Width; x++)
-                                        {
-                                            Vec4b color = indexer4[y, x];
-
-                                            alpha = color.Item3;
-                                            if (alpha == 0) continue;
-
-                                            //changement de repère : Dépend de l'origine
-                                            int X = (int)(fi.XY.X * frame.Width) + x - (int)(fi_mat_resized.Width * (V.X+1)/ 2);
-                                            int Y = (int)(fi.XY.Y * frame.Height) + y - (int)(fi_mat_resized.Height * (V.Y+1) / 2);
-
-                                            //coordonné du pixel dans l'image ?
-                                            if (X < 0 || Y < 0 || X > frame.Width - 1 || Y > frame.Height - 1) continue;
-                                            color.Item3 = (byte)(fi.Alpha * color.Item3);
-                                            filterIndexer[Y, X] = color;
-                                        }
-                                    }
-                                    break;
-
-                                default:
-                                    throw new Exception("TODO : fi.mat.Channels() = " + fi.mat.Channels().ToString());
-                            }
-
+                            fi.InsertMat(filterframe);
                             break;
-                            #endregion
                     }
+
+                    if (f.Dynamic)
+                        filtres_aumoins1dynamic = true;
                 }
             }
             catch (Exception ex)
             {
-
             }
         }
 
