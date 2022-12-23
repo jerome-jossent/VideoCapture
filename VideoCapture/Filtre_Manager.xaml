@@ -131,21 +131,27 @@
         <Grid Grid.Row="2" Visibility="{Binding gridIMG, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="auto"/>
-                <ColumnDefinition Width="auto"/>
-                <ColumnDefinition Width="auto"/>
             </Grid.ColumnDefinitions>
+           
+            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                <!-- Origine -->
+                <Grid >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Image Grid.Column="0" Margin="5" Source="/Resources/arrowsNSEW.png" Width="40" MouseDown="SetFilterPosition__Click" RenderOptions.BitmapScalingMode="Fant" ToolTip="Move"/>
+                    <Label Grid.Column="1" Content="Origine" VerticalAlignment="Center"/>
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding Source={StaticResource origineFromEnum}}"
+                              VerticalContentAlignment="Center" Height="30"
+                              SelectedItem="{Binding Path=currentFilter.origine, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
 
-            <Image Source="/Resources/Folder.png" Margin="5" Width="40" MouseDown="SelectFilterOnDisk_Click" ToolTip="{Binding currentFilter.FileName, UpdateSourceTrigger=PropertyChanged}" RenderOptions.BitmapScalingMode="Fant"/>
+                </Grid>
 
-            <TextBlock Grid.Column="1" Margin="5"  Text="{Binding currentFilter.FileName, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Center"/>
-
-            <Image Grid.Column="2" Width="100" Source="{Binding currentFilter._imageSource, Mode=OneWay, NotifyOnSourceUpdated=True, Converter={StaticResource bitmapConverter}}" RenderOptions.BitmapScalingMode="Fant"/>
-
-            <Image Grid.Column="3" Margin="5" Source="/Resources/arrowsNSEW.png" Width="40" MouseDown="SetFilterPosition__Click" RenderOptions.BitmapScalingMode="Fant" ToolTip="Move"/>
-
-            <StackPanel Grid.Column="4" VerticalAlignment="Center">
                 <Grid Width="200" Height="25">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="40"/>
@@ -170,6 +176,13 @@
                                           FormatString="F2" Minimum="0" Maximum="1" Increment="0.01" />
                 </Grid>
             </StackPanel>
+            
+            <Image Grid.Column="1" Source="/Resources/Folder.png" Margin="5" Width="40" MouseDown="SelectFilterOnDisk_Click" ToolTip="{Binding currentFilter.FileName, UpdateSourceTrigger=PropertyChanged}" RenderOptions.BitmapScalingMode="Fant"/>
+
+            <TextBlock Grid.Column="2" Margin="5" Text="{Binding currentFilter.FileName, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+
+            <Image Grid.Column="3" Width="100" Source="{Binding currentFilter._imageSource, Mode=OneWay, NotifyOnSourceUpdated=True, Converter={StaticResource bitmapConverter}}" RenderOptions.BitmapScalingMode="Fant"/>
+            
         </Grid>
 
         <!-- FORMULAIRE TEXTE -->
@@ -181,7 +194,7 @@
                 <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            
+
             <!-- Texte + font -->
             <StackPanel Width="250" Orientation="Vertical" >
                 <TextBox Height="50" TextWrapping="NoWrap" 
@@ -196,7 +209,7 @@
                     <Label Grid.Column="0"  Content="Font"/>
                     <ComboBox Grid.Column="1" Grid.ColumnSpan="2" ItemsSource="{Binding Source={StaticResource dataFromEnum}}" SelectedItem="{Binding Path=currentFilter.font}" />
                 </Grid>
-                
+
                 <Grid Margin="2">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="70"/>

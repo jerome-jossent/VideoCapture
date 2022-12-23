@@ -46,16 +46,42 @@ namespace VideoCapture
         public enum TypeOrigine { UpLeft, UpMiddle, UpRight, MiddleLeft, Middle, MiddleRight, DownLeft, DownMiddle, DownRight }
         public TypeOrigine origine
         {
-
             get { return _origine; }
             set
             {
+                //changement de type d'origine avec filtre initialisé
+                if (Size.Width != 2)
+                {
+                    Point A = OrigineToDirection(origine);
+                    Point Z = OrigineToDirection(value);
+                    Point V = (Point)(Z - A);
+                    XY = new Point(XY.X + Size.Width * V.X / 2, XY.Y + Size.Height * V.Y / 2);
+                }
+
                 _origine = value;
                 OnPropertyChanged("origine");
                 UpdateTitle();
             }
         }
         TypeOrigine _origine;
+
+        public static Point OrigineToDirection(TypeOrigine origine)
+        {
+            switch (origine)
+            {
+                case TypeOrigine.UpLeft: return new Point(-1, -1);
+                case TypeOrigine.UpMiddle: return new Point(0, -1);
+                case TypeOrigine.UpRight: return new Point(1, -1);
+                case TypeOrigine.MiddleLeft: return new Point(-1, 0);
+                case TypeOrigine.MiddleRight: return new Point(1, 0);
+                case TypeOrigine.DownLeft: return new Point(-1, 1);
+                case TypeOrigine.DownMiddle: return new Point(0, 1);
+                case TypeOrigine.DownRight: return new Point(1, 1);
+                case TypeOrigine.Middle:
+                default:
+                    return new Point(0, 0);
+            }
+        }
 
         public enum FiltreType { texte, image }
         public FiltreType _type;
@@ -130,6 +156,9 @@ namespace VideoCapture
             }
         }
         Point xy;
+
+        [JsonIgnore]
+        public Size Size = new Size(2, 2);
 
         public abstract void UpdateTitle();
 

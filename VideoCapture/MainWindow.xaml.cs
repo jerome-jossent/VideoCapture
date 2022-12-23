@@ -361,17 +361,16 @@ namespace VideoCapture
         {
             if (filterPositionning)
             {
+                //reset positionning
                 if (e.ChangedButton == MouseButton.Right)
-                {
-                    //reset positionning
                     currentFilter.XY = XY_previous;
-                }
 
                 _HideMenu = _HideMenu_previousstatus;
                 filterPositionning = false;
             }
             else
             {
+                //déplacement de la fenêtre
                 if (e.ChangedButton == MouseButton.Left)
                     this.DragMove();
             }
@@ -812,6 +811,7 @@ namespace VideoCapture
                                                 FontThickness_MAX = ft.FontThickness;
                                             }
                                             OpenCvSharp.Size textsize = Cv2.GetTextSize(txt, ft.font, ft.FontScale, FontThickness_MAX, out int Y_baseline);
+                                            ft.Size = new System.Windows.Size((double)textsize.Width / filterframe_dynamic.Width, (double)textsize.Height / filterframe_dynamic.Height);
 
                                             switch (ft.origine)
                                             {
@@ -1170,6 +1170,7 @@ namespace VideoCapture
                                     FontThickness_MAX = ft.FontThickness;
                                 }
                                 OpenCvSharp.Size textsize = Cv2.GetTextSize(txt, ft.font, ft.FontScale, FontThickness_MAX, out int Y_baseline);
+                                ft.Size = new System.Windows.Size((double)textsize.Width / filterframe.Width, (double)textsize.Height / filterframe.Height);
 
                                 switch (ft.origine)
                                 {
@@ -1219,6 +1220,7 @@ namespace VideoCapture
                                 h_targeted = frame.Height * fi.ScaleFactor;
                                 w_targeted = h_targeted * fi.mat.Width / fi.mat.Height;
                             }
+                            fi.Size = new System.Windows.Size((double)w_targeted / filterframe.Width, (double)h_targeted / filterframe.Height);
 
                             Cv2.Resize(fi.mat, fi_mat_resized, new OpenCvSharp.Size(w_targeted, h_targeted), interpolation: InterpolationFlags.Cubic);
 
@@ -1230,19 +1232,22 @@ namespace VideoCapture
                             var filterMat4 = new Mat<Vec4b>(filterframe);
                             var filterIndexer = filterMat4.GetIndexer();
                             byte alpha;
+                            System.Windows.Point V = Filtre.OrigineToDirection(fi.origine);
+
                             switch (fi.mat.Channels())
                             {
                                 case 3:
                                     var mat3 = new Mat<Vec3b>(fi_mat_resized);
                                     var indexer3 = mat3.GetIndexer();
+
                                     alpha = (byte)(255 * fi.Alpha);
                                     for (int y = 0; y < fi_mat_resized.Height; y++)
                                     {
                                         for (int x = 0; x < fi_mat_resized.Width; x++)
                                         {
-                                            //changement de repère : centré
-                                            int X = (int)(fi.XY.X * frame.Width) + x - fi_mat_resized.Width / 2;
-                                            int Y = (int)(fi.XY.Y * frame.Height) + y - fi_mat_resized.Height / 2;
+                                            //changement de repère : Dépend de l'origine
+                                            int X = (int)(fi.XY.X * frame.Width) + x - (int)(fi_mat_resized.Width * (V.X + 1) / 2);
+                                            int Y = (int)(fi.XY.Y * frame.Height) + y - (int)(fi_mat_resized.Height * (V.Y + 1) / 2);
 
                                             //coordonné du pixel dans l'image ?
                                             if (X < 0 || Y < 0 || X > frame.Width - 1 || Y > frame.Height - 1) continue;
@@ -1267,9 +1272,9 @@ namespace VideoCapture
                                             alpha = color.Item3;
                                             if (alpha == 0) continue;
 
-                                            //changement de repère : centré
-                                            int X = (int)(fi.XY.X * frame.Width) + x - fi_mat_resized.Width / 2;
-                                            int Y = (int)(fi.XY.Y * frame.Height) + y - fi_mat_resized.Height / 2;
+                                            //changement de repère : Dépend de l'origine
+                                            int X = (int)(fi.XY.X * frame.Width) + x - (int)(fi_mat_resized.Width * (V.X+1)/ 2);
+                                            int Y = (int)(fi.XY.Y * frame.Height) + y - (int)(fi_mat_resized.Height * (V.Y+1) / 2);
 
                                             //coordonné du pixel dans l'image ?
                                             if (X < 0 || Y < 0 || X > frame.Width - 1 || Y > frame.Height - 1) continue;
@@ -1280,7 +1285,7 @@ namespace VideoCapture
                                     break;
 
                                 default:
-                                    break;
+                                    throw new Exception("TODO : fi.mat.Channels() = " + fi.mat.Channels().ToString());
                             }
 
                             break;
@@ -1364,7 +1369,7 @@ namespace VideoCapture
                             {
                                 Vec4b pix_filter = indexer_filter[y, x];
                                 byte alpha = pix_filter.Item3;
-                                
+
                                 float coeff = (float)alpha / 255;
 
                                 pix_filter = new Vec4b((byte)(pix_filter.Item0 * coeff),
