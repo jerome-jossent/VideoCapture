@@ -28,7 +28,7 @@ namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
     {
-        const string version = "version 2022/12/18";
+        const string version = "version 2022/12/24";
 
         #region VARIABLES & PARAMETERS
         bool AUTORELOAD = true;
@@ -810,14 +810,11 @@ namespace VideoCapture
                                             OpenCvSharp.Point pi = new OpenCvSharp.Point(filtre.XY.X * filterframe.Width, filtre.XY.Y * filterframe.Height);
 
                                             //lit la prochaine frame
-                                            try
+                                            fi.videoCapture.Read(fi.mat);
+                                            if (fi.mat.Empty())
                                             {
+                                                fi.videoCapture.Set(VideoCaptureProperties.PosFrames, 0);
                                                 fi.videoCapture.Read(fi.mat);
-                                            }
-                                            catch (Exception ex)
-                                            {
-                                                throw;
-                                                //relire depuis le début ?
                                             }
                                             fi.InsertMat(filterframe_dynamic);
                                             wait_ms = (int)(1000 / fi.videoCapture.Fps);

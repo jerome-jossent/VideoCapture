@@ -96,7 +96,7 @@ namespace VideoCapture
             System.IO.FileInfo fi = new System.IO.FileInfo(fileName);
             title3 = fi.Name;
 
-            if (fi.Extension.ToLower() == ".gif")
+            if (fi.Extension.ToLower() == ".gif" || fi.Extension.ToLower() == ".mp4")
             {
                 videoCapture = new OpenCvSharp.VideoCapture(fileName);
                 mat = new Mat();
