@@ -66,7 +66,7 @@ namespace VideoCapture
         Mat frame;
         Mat frameShowed;
         long framereallygrabbed = 0;
-        double frame_ratio = 3;
+        double frame_ratio = 1;
         double _actualWidth;
         // flips & rotations
         bool flip_h;
@@ -338,23 +338,38 @@ namespace VideoCapture
             QUIT();
         }
 
+        bool window_size_change_by_code = false;
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
-            if (WindowsScreenScale == 0) return;
-            if (format == null) return;
+            if (window_size_change_by_code) return;
 
-            frame_ratio = (double)format.w / format.h;
+            //qd avec barre windows bord H+45 => 30 *1.5
+            //qd sans barre windows bord H+8  =>  5 *1.5
 
-            if (sizeInfo.WidthChanged)
-                Width = Width - image.Width + (sizeInfo.NewSize.Height * frame_ratio);
+            window_size_change_by_code = true;
+            if (sizeInfo.WidthChanged && sizeInfo.HeightChanged)
+            {
+                //alors changer (arbitrairement) la hauteur en fonction de la largeur et du ratio
+                //Height = sizeInfo.NewSize.Width / frame_ratio + (HideWindowBar ? (30 * WindowsScreenScale) : 5 * WindowsScreenScale);
+                Height = sizeInfo.NewSize.Width / frame_ratio;
+                //this.RenderSize = new System.Windows.Size(sizeInfo.NewSize.Width, sizeInfo.NewSize.Width / frame_ratio);
+            }
+            else if (sizeInfo.WidthChanged)
+            {
+                //alors changer aussi la hauteur
+                //Height = sizeInfo.NewSize.Width / frame_ratio + (HideWindowBar ? (30 * WindowsScreenScale) : 5 * WindowsScreenScale);
+                Height = sizeInfo.NewSize.Width / frame_ratio;
+                //this.RenderSize = new System.Windows.Size(sizeInfo.NewSize.Width, sizeInfo.NewSize.Width / frame_ratio);
+            }
             else
-                Height = Height - image.Height + (sizeInfo.NewSize.Width / frame_ratio);
+            {
+                //Width = sizeInfo.NewSize.Height * frame_ratio - (HideWindowBar ? (30 * WindowsScreenScale) : 5 * WindowsScreenScale);
+                Width = sizeInfo.NewSize.Height * frame_ratio;
+                //this.RenderSize = new System.Windows.Size(sizeInfo.NewSize.Height * frame_ratio, sizeInfo.NewSize.Height);
+            }
 
             _actualWidth = Width;
-            if (_actualWidth == double.NaN)
-            {
-                bool quoi = true;
-            }
+            window_size_change_by_code = false;
         }
 
         void img_mousedown(object sender, MouseButtonEventArgs e)
@@ -549,10 +564,10 @@ namespace VideoCapture
             chrono.Start();
             isRunning = true;
             indexDevice = cbx_device.SelectedIndex;
-            CaptureCamera(indexDevice);
+            CaptureCameraStart(indexDevice);
 
             isRunningFiltre = true;
-            FiltreCamera();
+            FiltreCameraStart();
         }
 
         void Combobox_CaptureDevice_Change(object sender, SelectionChangedEventArgs e)
@@ -567,7 +582,15 @@ namespace VideoCapture
             {
                 MessageBox.Show(ex.Message);
             }
-            cbx_deviceFormat.ItemsSource = formats.OrderBy(f => f.Value.format).ThenByDescending(f => f.Value.w).Select(f => f.Key);
+            if (formats == null)
+            {
+                cbx_deviceFormat.IsEnabled = false;
+            }
+            else
+            {
+                cbx_deviceFormat.IsEnabled = true;
+                cbx_deviceFormat.ItemsSource = formats.OrderBy(f => f.Value.format).ThenByDescending(f => f.Value.w).Select(f => f.Key);
+            }
 
             deviceName = cbx_device.Items[cbx_device.SelectedIndex].ToString();
             OnPropertyChanged("_title");
@@ -579,8 +602,11 @@ namespace VideoCapture
             }
             else
             {
-                //set default format
-                cbx_deviceFormat.SelectedIndex = 0;
+                if (formats != null)
+                {
+                    //set default format
+                    cbx_deviceFormat.SelectedIndex = 0;
+                }
 
                 CONFIGURATIONS.Add(deviceName, cameraConfiguration);
             }
@@ -611,7 +637,7 @@ namespace VideoCapture
         #endregion
 
         #region VIDEO MANAGEMENT : CAPTURE & FILTRES
-        void CaptureCamera(int index)
+        void CaptureCameraStart(int index)
         {
             if (threadCapture != null && threadCapture.IsAlive)
             {
@@ -619,60 +645,18 @@ namespace VideoCapture
                 Thread.Sleep(100);
             }
             indexDevice = index;
-            threadCapture = new Thread(new ThreadStart(CaptureCameraCallback));
+            threadCapture = new Thread(new ThreadStart(CaptureCameraThread));
             threadCapture.Start();
         }
 
-        void FiltreCamera()
-        {
-            if (threadFiltre != null && threadFiltre.IsAlive)
-            {
-                threadFiltre.Abort();
-                Thread.Sleep(100);
-            }
-            threadFiltre = new Thread(new ThreadStart(FiltreCameraCallback));
-            threadFiltre.Start();
-        }
-
-        void CaptureCameraStop()
-        {
-            if (isRunning)
-            {
-                isRunning = false;
-                Thread.Sleep(100);
-                threadCapture?.Abort();
-            }
-        }
-
-        void FiltreCameraStop()
-        {
-            if (isRunningFiltre)
-            {
-                isRunningFiltre = false;
-                Thread.Sleep(100);
-                threadFiltre?.Abort();
-            }
-        }
-
-        string Get_current_fourcc()
-        {
-            int intfourcc = (int)capture.Get(VideoCaptureProperties.FourCC);
-
-            byte[] bytesfourcc = BitConverter.GetBytes(intfourcc);
-            char c1 = Convert.ToChar(bytesfourcc[0]);
-            char c2 = Convert.ToChar(bytesfourcc[1]);
-            char c3 = Convert.ToChar(bytesfourcc[2]);
-            char c4 = Convert.ToChar(bytesfourcc[3]);
-            return new string(new char[] { c1, c2, c3, c4 });
-        }
-
-        void CaptureCameraCallback()
+        void CaptureCameraThread()
         {
             int current_indexDevice = indexDevice;
             frame = new Mat();
             capture = new OpenCvSharp.VideoCapture(indexDevice);
 
             capture.Open(indexDevice, VideoCaptureAPIs.DSHOW);
+            capture.Set(VideoCaptureProperties.FourCC, FourCC.FromString(format.format));
             capture.Set(VideoCaptureProperties.FrameWidth, format.w);
             capture.Set(VideoCaptureProperties.FrameHeight, format.h);
             capture.Set(VideoCaptureProperties.Fps, format.fr);
@@ -701,6 +685,7 @@ namespace VideoCapture
 
                 while (isRunning)
                 {
+                    //changement de device
                     if (indexDevice != current_indexDevice)
                     {
                         capture = new OpenCvSharp.VideoCapture(indexDevice);
@@ -709,12 +694,18 @@ namespace VideoCapture
                         newFormat = true;
                     }
 
+                    //changement de format
                     if (newFormat)
                     {
+                        capture.Set(VideoCaptureProperties.FourCC, FourCC.FromString(format.format));
                         capture.Set(VideoCaptureProperties.FrameWidth, format.w);
                         capture.Set(VideoCaptureProperties.FrameHeight, format.h);
                         capture.Set(VideoCaptureProperties.Fps, format.fr);
                         capture.Set(VideoCaptureProperties.FourCC, FourCC.FromString(format.format));
+
+
+                        // int fourcc = VideoWriter.FourCC('M', 'J', 'P', 'G');
+                        //capture.Set(VideoCaptureProperties.FourCC, fourcc);
 
                         frame_ratio = (double)format.w / format.h;
 
@@ -723,7 +714,11 @@ namespace VideoCapture
                         {
                             bool quoi = true;
                         }
-                        Application.Current.Dispatcher.Invoke(() => { Width = _actualWidth; });
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            Width = format.w;// _actualWidth; 
+                            Height = format.h;
+                        });
 
                         capture.Read(frame);
                         Filter_Update();
@@ -733,23 +728,59 @@ namespace VideoCapture
 
                     capture.Read(frame);
 
-                    if (!frame.Empty())
+                    if (frame.Empty())
                     {
-                        framereallygrabbed++;
-
-                        if (roi_enabled)
-                            frame = ROI(frame, roi);
-
-                        frame = RotationFlip(frame, flip_h, flip_v, rotation);
-
-                        Show(frame);
+                        Thread.Sleep(100);
+                        continue;
                     }
+
+                    framereallygrabbed++;
+
+                    if (roi_enabled)
+                        frame = ROI(frame, roi);
+
+                    frame = RotationFlip(frame, flip_h, flip_v, rotation);
+
+                    Show(frame);
                 }
             }
             capture.Dispose();
         }
 
-        void FiltreCameraCallback()
+        void CaptureCameraStop()
+        {
+            if (isRunning)
+            {
+                isRunning = false;
+                Thread.Sleep(100);
+                threadCapture?.Abort();
+            }
+        }
+
+        string Get_current_fourcc()
+        {
+            int intfourcc = (int)capture.Get(VideoCaptureProperties.FourCC);
+
+            byte[] bytesfourcc = BitConverter.GetBytes(intfourcc);
+            char c1 = Convert.ToChar(bytesfourcc[0]);
+            char c2 = Convert.ToChar(bytesfourcc[1]);
+            char c3 = Convert.ToChar(bytesfourcc[2]);
+            char c4 = Convert.ToChar(bytesfourcc[3]);
+            return new string(new char[] { c1, c2, c3, c4 });
+        }
+
+        void FiltreCameraStart()
+        {
+            if (threadFiltre != null && threadFiltre.IsAlive)
+            {
+                threadFiltre.Abort();
+                Thread.Sleep(100);
+            }
+            threadFiltre = new Thread(new ThreadStart(FiltreCameraThread));
+            threadFiltre.Start();
+        }
+
+        void FiltreCameraThread()
         {
             while (isRunningFiltre)
             {
@@ -840,6 +871,16 @@ namespace VideoCapture
                 }
             }
         }
+
+        void FiltreCameraStop()
+        {
+            if (isRunningFiltre)
+            {
+                isRunningFiltre = false;
+                Thread.Sleep(100);
+                threadFiltre?.Abort();
+            }
+        }
         #endregion
 
         #region AUDIO
@@ -923,10 +964,13 @@ namespace VideoCapture
 
                 lock (lockobject)
                 {
-                    if (_actualWidth < frame.Width && _actualWidth > 0)
+                    //if (_actualWidth < frame.Width && _actualWidth > 0)
+                    if (_actualWidth / WindowsScreenScale < frame.Width)
                     {
                         frameShowed = new Mat();
-                        Cv2.Resize(frame, frameShowed, new OpenCvSharp.Size(_actualWidth, _actualWidth / frame.Width * frame.Height), interpolation: InterpolationFlags.Cubic);
+                        Cv2.Resize(frame, frameShowed,
+                            new OpenCvSharp.Size(_actualWidth, _actualWidth / frame_ratio),
+                            interpolation: InterpolationFlags.Cubic);
                     }
                     else
                         frameShowed = frame.Clone();
@@ -935,7 +979,14 @@ namespace VideoCapture
                     {
                         Application.Current.Dispatcher.Invoke(() =>
                         {
-                            IMS = OpenCvSharp.WpfExtensions.WriteableBitmapConverter.ToWriteableBitmap(frameShowed);
+                            try
+                            {
+                                IMS = OpenCvSharp.WpfExtensions.WriteableBitmapConverter.ToWriteableBitmap(frameShowed);
+                            }
+                            catch (Exception)
+                            {
+                                throw;
+                            }
                         });
                     }
                     catch (Exception ex)
