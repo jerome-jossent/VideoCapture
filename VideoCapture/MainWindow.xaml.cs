@@ -12,23 +12,13 @@ using System.ComponentModel;
 using System.IO;
 using System.Collections.ObjectModel;
 using Newtonsoft.Json;
-
-
-//using CSCore;
-//using CSCore.Codecs.WAV;
-//using CSCore.CoreAudioAPI;
-//using System.Windows.Forms;
-//using CSCore.SoundIn;
-//using CSCore.Streams;
-//using CSCore.Win32;
-
-
+using OpenCvSharp.WpfExtensions;
 
 namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
     {
-        const string version = "version 2022/12/24";
+        const string version = "version 2023/06/08";
 
         #region VARIABLES & PARAMETERS
         bool AUTORELOAD = true;
@@ -1010,6 +1000,11 @@ namespace VideoCapture
             _fps = "[" + _FPS.ToString("N1") + " fps]";
         }
 
+        void ctxm_flipANDrotateMenu_Enter(object sender, MouseEventArgs e)
+        {
+            ComputeFlippedAndRotatedMiniatures();
+        }
+
         void ctxm_rotate90_Click(object sender, RoutedEventArgs e)
         {
             if (rotation == RotateFlags.Rotate90Clockwise)
@@ -1035,6 +1030,40 @@ namespace VideoCapture
             else
                 rotation = RotateFlags.Rotate180;
             MenuItemRotationCheck();
+        }
+
+        void ComputeFlippedAndRotatedMiniatures()
+        {
+            Mat miniature = new Mat();
+            OpenCvSharp.Size s = new OpenCvSharp.Size();
+            float ratio = (float)frameShowed.Width / frameShowed.Height;
+
+            if (ratio > 1)
+            {
+                s.Width = 120;
+                s.Height = (int)(120 / ratio);
+            }
+            else
+            {
+                s.Width = (int)(120 / ratio);
+                s.Height = 120;
+            }
+            Cv2.Resize(frameShowed, miniature, s, interpolation:InterpolationFlags.Cubic);
+
+            Mat miniature_r90 = new Mat(); Cv2.Rotate(miniature,miniature_r90, RotateFlags.Rotate90Clockwise);
+            Mat miniature_r270 = new Mat(); Cv2.Rotate(miniature, miniature_r270, RotateFlags.Rotate90Counterclockwise);
+            Mat miniature_r180 = new Mat(); Cv2.Rotate(miniature, miniature_r180, RotateFlags.Rotate180);
+            Mat miniature_fv = new Mat(); Cv2.Flip(miniature, miniature_fv, FlipMode.X);
+            Mat miniature_fh = new Mat(); Cv2.Flip(miniature, miniature_fh, FlipMode.Y);
+
+            Dispatcher.Invoke(() =>
+            {
+                this.miniature_r90.Source = miniature_r90.ToBitmapSource();
+                this.miniature_r270.Source = miniature_r270.ToBitmapSource();
+                this.miniature_r180.Source = miniature_r180.ToBitmapSource();
+                this.miniature_fv.Source = miniature_fv.ToBitmapSource();
+                this.miniature_fh.Source = miniature_fh.ToBitmapSource();
+            });
         }
 
         void MenuItemRotationCheck()
@@ -1552,5 +1581,6 @@ namespace VideoCapture
         #endregion
 
         #endregion
+
     }
 }

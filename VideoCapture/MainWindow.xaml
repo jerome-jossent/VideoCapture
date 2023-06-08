@@ -34,7 +34,7 @@
     </Window.Resources>
 
     <Grid>
-        
+
         <!--IMAGE CAPTURE-->
         <Image Stretch="Uniform" HorizontalAlignment="Left" x:Name="image"
                Source="{Binding IMS, Mode=OneWay, NotifyOnSourceUpdated=True}"
@@ -103,7 +103,7 @@
                     <Separator />
 
                     <!-- Flip & Rotation -->
-                    <MenuItem>
+                    <MenuItem MouseEnter="ctxm_flipANDrotateMenu_Enter">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
                                 <Image Width="20" Height="20" Source="/Resources/arrow_turn_right.png" RenderOptions.BitmapScalingMode="Fant"/>
@@ -114,24 +114,27 @@
                         <MenuItem Click="ctxm_rotate90_Click" Name="ctxm_rotate90">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
+                                    <Image Width="60" Height="60" x:Name="miniature_r90" RenderOptions.BitmapScalingMode="Fant"/>
                                     <Image Width="30" Height="30" Source="/Resources/arrow_turn_right.png" RenderOptions.BitmapScalingMode="Fant"/>
-                                    <ContentPresenter Margin="10,0,0,0" Content="Rotate 90°" />
+                                    <ContentPresenter Margin="10,0,0,0" Content="Rotate 90°" VerticalAlignment="Center" />
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
                         <MenuItem Click="ctxm_rotate270_Click" Name="ctxm_rotate270">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
+                                    <Image Width="60" Height="60" x:Name="miniature_r270" RenderOptions.BitmapScalingMode="Fant"/>
                                     <Image Width="30" Height="30" Source="/Resources/arrow_turn_left.png" RenderOptions.BitmapScalingMode="Fant"/>
-                                    <ContentPresenter Margin="10,0,0,0" Content="Rotate -90°" />
+                                    <ContentPresenter Margin="10,0,0,0" Content="Rotate -90°" VerticalAlignment="Center" />
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
                         <MenuItem Click="ctxm_rotate180_Click" Name="ctxm_rotate180">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
+                                    <Image Width="60" Height="60" x:Name="miniature_r180" RenderOptions.BitmapScalingMode="Fant"/>
                                     <Image Width="30" Height="30" Source="/Resources/arrow_turn_180.png" RenderOptions.BitmapScalingMode="Fant"/>
-                                    <ContentPresenter Margin="10,0,0,0" Content="Rotate 180°" />
+                                    <ContentPresenter Margin="10,0,0,0" Content="Rotate 180°" VerticalAlignment="Center" />
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
@@ -139,16 +142,18 @@
                         <MenuItem Click="ctxm_flip_h_Click">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
+                                    <Image Width="60" Height="60" x:Name="miniature_fh" RenderOptions.BitmapScalingMode="Fant"/>
                                     <Image Width="30" Height="30" Source="/Resources/flip_h.png" RenderOptions.BitmapScalingMode="Fant"/>
-                                    <ContentPresenter Margin="10,0,0,0" Content="Horizontal mirror" />
+                                    <ContentPresenter Margin="10,0,0,0" Content="Horizontal mirror" VerticalAlignment="Center" />
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
                         <MenuItem Click="ctxm_flip_v_Click">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
+                                    <Image Width="60" Height="60" x:Name="miniature_fv" RenderOptions.BitmapScalingMode="Fant"/>
                                     <Image Width="30" Height="30" Source="/Resources/flip_v.png" RenderOptions.BitmapScalingMode="Fant"/>
-                                    <ContentPresenter Margin="10,0,0,0" Content="Vertical mirror" />
+                                    <ContentPresenter Margin="10,0,0,0" Content="Vertical mirror" VerticalAlignment="Center" />
                                 </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
@@ -179,7 +184,7 @@
                         </MenuItem>
                     </MenuItem>
                     <Separator />
-                    
+
                     <!-- About -->
                     <MenuItem>
                         <MenuItem.Header>
@@ -351,7 +356,7 @@
 
             </StackPanel>
         </Grid>
-        
+
         <!--Infos-->
         <Grid VerticalAlignment="Bottom" Visibility="{Binding _ShowCPUMem, Converter={StaticResource VisibilityConverter}}">
             <Grid.ColumnDefinitions>
@@ -367,6 +372,6 @@
             <!--CPU MEM-->
             <Standard_UC_Net4_7_2_JJO:CPU_Memory Grid.Column="1" x:Name="cpu_mem" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="#55ffffff"/>
         </Grid>
-        
+
     </Grid>
 </Window>
