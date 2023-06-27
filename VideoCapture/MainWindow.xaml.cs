@@ -18,7 +18,7 @@ namespace VideoCapture
 {
     public partial class MainWindow : System.Windows.Window, INotifyPropertyChanged
     {
-        const string version = "version 2023/06/08";
+        const string version = "version 2023/06/15";
 
         #region VARIABLES & PARAMETERS
         bool AUTORELOAD = true;
@@ -716,6 +716,9 @@ namespace VideoCapture
                         newFormat = false;
                     }
 
+                    frame.Dispose();
+                    frame = new Mat();
+
                     capture.Read(frame);
 
                     if (frame.Empty())
@@ -948,6 +951,9 @@ namespace VideoCapture
         #region IMAGE MANAGEMENT
         void Show(Mat frame)
         {
+
+            GC.Collect();
+
             if (!frame.Empty())
             {
                 GC.Collect();
