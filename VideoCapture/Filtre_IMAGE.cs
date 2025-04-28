@@ -15,9 +15,9 @@ namespace VideoCapture
             _type = FiltreType.image;
             XY = new System.Windows.Point(0.5, 0.5);
             origine = TypeOrigine.Middle;
-            isImage = true;
-            OnPropertyChanged("isTxt");
-            OnPropertyChanged("isImage");
+            //isImage = true;
+            //OnPropertyChanged("isTxt");
+            //OnPropertyChanged("isImage");
         }
 
         public double Alpha
@@ -159,7 +159,7 @@ namespace VideoCapture
                 var roi = new Mat(filterframe, rect);
                 fi_mat_resized.CopyTo(roi);
 
-                #region VIEUX CODE MNIPULATION DE PIXEL
+                #region VIEUX CODE MANIPULATION DE PIXEL
                 //var filterMat4 = new Mat<Vec4b>(filterframe);
                 //var filterIndexer = filterMat4.GetIndexer();
                 //byte alpha;

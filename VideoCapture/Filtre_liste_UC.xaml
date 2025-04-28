@@ -64,5 +64,29 @@
             <TextBlock Grid.Column="4" Text="{Binding title2}"/>
             <TextBlock Grid.Column="5" Text="{Binding title3}"/>
         </Grid>
+        
+        <!--RULLER-->
+        <Grid Visibility="{Binding isRuller, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="60"/>
+                <ColumnDefinition Width="90"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
+            </Grid.ColumnDefinitions>
+
+            <CheckBox Grid.Column="0" IsChecked="{Binding enable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center"/>
+
+            <Image Grid.Column="1" Width="20" Height="20" Visibility="{Binding isImage, Converter={StaticResource BoolToVis}}"
+               Source="{Binding _imageSource, Mode=OneWay, NotifyOnSourceUpdated=True, Converter={StaticResource bitmapConverter}}" RenderOptions.BitmapScalingMode="Fant"/>
+
+            <TextBlock Grid.Column="2" Text="{Binding title}"/>
+            <TextBlock Grid.Column="3" Text="{Binding title1}"/>
+            <TextBlock Grid.Column="4" Text="{Binding title2}"/>
+            <TextBlock Grid.Column="5" Text="{Binding title3}"/>
+        </Grid>
+
+
     </Grid>
 </UserControl>

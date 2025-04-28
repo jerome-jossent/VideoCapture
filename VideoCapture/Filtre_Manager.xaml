@@ -66,6 +66,8 @@
                     <MenuItem Click="btn_add_text_click" Header="Date_Time_ms"/>
                     <MenuItem Click="btn_add_text_click" Header="FrameNumber"/>
                     <MenuItem Click="btn_add_text_click" Header="FPS"/>
+                    <Separator/>
+                    <MenuItem Click="btn_add_ruller_click" Header="Ruller"/>
 
                 </MenuItem>
 

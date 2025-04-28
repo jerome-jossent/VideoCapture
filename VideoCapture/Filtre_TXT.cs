@@ -214,9 +214,9 @@ namespace VideoCapture
             XY = new System.Windows.Point(0.5, 0.5);
             _type = FiltreType.texte;
             origine = TypeOrigine.DownLeft;
-            isTxt = true;
-            OnPropertyChanged("isTxt");
-            OnPropertyChanged("isImage");
+            //isTxt = true;
+            //OnPropertyChanged("isTxt");
+            //OnPropertyChanged("isImage");
         }
 
         public override void UpdateTitle()

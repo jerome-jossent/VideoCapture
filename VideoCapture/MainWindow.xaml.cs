@@ -74,7 +74,14 @@ namespace VideoCapture
         Thread threadFiltre;
         bool isRunningFiltre = false;
         Filtre_Manager filtre_manager;
-        Filtre currentFilter;
+        Filtre currentFilter
+        {
+            get => filtre_manager.currentFilter; set
+            {
+                filtre_manager.currentFilter = value;
+            }
+        }
+
         Mat filterframe;
         Mat filterframe_dynamic;
         bool filterPositionning = false;
@@ -226,7 +233,7 @@ namespace VideoCapture
             set
             {
                 ims_calque = value;
-                OnPropertyChanged("IMS_calque");
+                OnPropertyChanged(nameof(IMS_calque));
             }
         }
         System.Windows.Media.ImageSource ims_calque;
@@ -260,7 +267,7 @@ namespace VideoCapture
             set
             {
                 __filtres = value;
-                OnPropertyChanged("filtres");
+                OnPropertyChanged(nameof(filtres));
             }
         }
         ObservableCollection<Filtre> __filtres = new ObservableCollection<Filtre>();
@@ -305,6 +312,8 @@ namespace VideoCapture
             }
         }
         int screenshot_Count = 0;
+
+        bool screenshot_inprogress = false;
 
         System.Drawing.Bitmap imageCalque;
         #endregion
@@ -364,6 +373,15 @@ namespace VideoCapture
 
         void img_mousedown(object sender, MouseButtonEventArgs e)
         {
+            if (currentFilter != null && currentFilter._type == Filtre.FiltreType.ruller)
+            {
+                Filtre_Ruller fr = currentFilter as Filtre_Ruller;
+                currentFilter = fr.MouseDown(filterframe, filterframe_dynamic);
+                if (currentFilter == null) //fin processus ruller
+                    Filter_Update();
+                return;
+            }
+
             if (filterPositionning)
             {
                 //reset positionning
@@ -372,6 +390,7 @@ namespace VideoCapture
 
                 _HideMenu = _HideMenu_previousstatus;
                 filterPositionning = false;
+                currentFilter = null; //2025/04/24
             }
             else
             {
@@ -401,12 +420,14 @@ namespace VideoCapture
         {
             if (filterPositionning)
             {
-                System.Windows.Point GetMousePos = Mouse.GetPosition(this);
+                currentFilter.XY = GetMousePosition();
+                return;
+            }
 
-                currentFilter.XY = new System.Windows.Point(GetMousePos.X / ActualWidth,
-                                                            GetMousePos.Y / ActualHeight);
-                //UpdateFilers();
-
+            if (currentFilter != null && currentFilter._type == Filtre.FiltreType.ruller)
+            {
+                currentFilter.XY = GetMousePosition();
+                (currentFilter as Filtre_Ruller).MouseMove(filterframe_dynamic);
                 return;
             }
 
@@ -415,6 +436,12 @@ namespace VideoCapture
                 grd_visu.Visibility = Visibility.Visible;
                 mouseEnterEventDelayTimer.Start();
             }
+        }
+
+        System.Windows.Point GetMousePosition()
+        {
+            System.Windows.Point GetMousePos = Mouse.GetPosition(this);
+            return new System.Windows.Point(GetMousePos.X / ActualWidth, GetMousePos.Y / ActualHeight);
         }
 
         void grd_visu_Collapse()
@@ -617,7 +644,8 @@ namespace VideoCapture
             formatName = cbx_deviceFormat.Items[cbx_deviceFormat.SelectedIndex].ToString();
             OnPropertyChanged("_title");
 
-            cameraConfiguration = new CameraConfiguration(deviceName, format, ActualWidth, ActualHeight);
+            //cameraConfiguration = new CameraConfiguration(deviceName, format, ActualWidth, ActualHeight);
+            cameraConfiguration = new CameraConfiguration(deviceName, format, format.w, format.h);
 
             if (!isRunning)
                 Play();
@@ -652,6 +680,8 @@ namespace VideoCapture
             capture.Set(VideoCaptureProperties.Fps, format.fr);
             capture.Set(VideoCaptureProperties.FourCC, FourCC.FromString(format.format));
 
+            frame_ratio = (double)format.w / format.h;
+
             if (capture.IsOpened())
             {
                 if (configLoading && cameraConfiguration != null)
@@ -667,7 +697,6 @@ namespace VideoCapture
                     {
                         Width = cameraConfiguration.width;
                         Height = cameraConfiguration.height;
-                        configLoading = false;
                     });
 
                     Filter_Update();
@@ -711,11 +740,12 @@ namespace VideoCapture
                         });
 
                         capture.Read(frame);
-                        Filter_Update();
 
                         newFormat = false;
                     }
 
+                    while (screenshot_inprogress)
+                        Thread.Sleep(10);
                     frame.Dispose();
                     frame = new Mat();
 
@@ -726,6 +756,8 @@ namespace VideoCapture
                         Thread.Sleep(100);
                         continue;
                     }
+
+                    //Filter_Update();
 
                     framereallygrabbed++;
 
@@ -843,16 +875,26 @@ namespace VideoCapture
                                             fi.InsertMat(filterframe_dynamic);
                                             wait_ms = (int)(1000 / fi.videoCapture.Fps);
                                             break;
+                                        #endregion
+
+                                        #region "ruller"
+                                        case Filtre.FiltreType.ruller:
+                                            Filtre_Ruller fr = (Filtre_Ruller)filtre;
+                                            fr.DrawPointsAndLine(filterframe_dynamic);
+
+                                            break;
                                             #endregion
                                     }
                                 }
                             }
                         }
                         if (!filterframe_dynamic.Empty())
+                        {
                             Application.Current.Dispatcher.Invoke(() =>
                             {
                                 IMS_calque = OpenCvSharp.WpfExtensions.WriteableBitmapConverter.ToWriteableBitmap(filterframe_dynamic);
                             });
+                        }
                     }
                     int need_to_wait_ms = wait_ms - (int)DateTime.Now.Subtract(T0).TotalMilliseconds;
                     if (_FPS > 0)
@@ -951,7 +993,6 @@ namespace VideoCapture
         #region IMAGE MANAGEMENT
         void Show(Mat frame)
         {
-
             GC.Collect();
 
             if (!frame.Empty())
@@ -1054,9 +1095,9 @@ namespace VideoCapture
                 s.Width = (int)(120 / ratio);
                 s.Height = 120;
             }
-            Cv2.Resize(frameShowed, miniature, s, interpolation:InterpolationFlags.Cubic);
+            Cv2.Resize(frameShowed, miniature, s, interpolation: InterpolationFlags.Cubic);
 
-            Mat miniature_r90 = new Mat(); Cv2.Rotate(miniature,miniature_r90, RotateFlags.Rotate90Clockwise);
+            Mat miniature_r90 = new Mat(); Cv2.Rotate(miniature, miniature_r90, RotateFlags.Rotate90Clockwise);
             Mat miniature_r270 = new Mat(); Cv2.Rotate(miniature, miniature_r270, RotateFlags.Rotate90Counterclockwise);
             Mat miniature_r180 = new Mat(); Cv2.Rotate(miniature, miniature_r180, RotateFlags.Rotate180);
             Mat miniature_fv = new Mat(); Cv2.Flip(miniature, miniature_fv, FlipMode.X);
@@ -1185,10 +1226,11 @@ namespace VideoCapture
 
         public void Filter_Update()
         {
-            if (frame == null || frame.Empty())
-                return;
             try
             {
+                if (frame == null || frame.Empty())
+                    return;
+
                 filterframe = new Mat(frame.Size(), MatType.CV_8UC4);
                 filtres_aumoins1dynamic = false;
                 foreach (Filtre f in filtres)
@@ -1207,6 +1249,16 @@ namespace VideoCapture
                             Filtre_IMAGE fi = (Filtre_IMAGE)f;
                             fi.InsertMat(filterframe);
                             break;
+
+                        case Filtre.FiltreType.ruller:
+                            Filtre_Ruller fr = (Filtre_Ruller)f;
+                            if (fr.defined)
+                            {
+                                fr.DrawPointsAndLine(filterframe);
+                                Filtre_TXT mesure = fr.DisplayMesure();
+                                fr.mesure.InsertText(filterframe, fr.distance.ToString("f4"));
+                            }
+                            break;
                     }
 
                     if (f.Dynamic)
@@ -1218,7 +1270,7 @@ namespace VideoCapture
             }
         }
 
-        void ShowMatDebug(Mat frame)
+        public void ShowMatDebug(Mat frame)
         {
             Cv2.NamedWindow("Debug");
             Cv2.ImShow("Debug", frame);
@@ -1268,6 +1320,9 @@ namespace VideoCapture
             if (ScreenshotFolder != null && System.IO.Directory.Exists(ScreenshotFolder))
                 if (frame != null && !frame.Empty())
                 {
+                    screenshot_inprogress = true;
+                    capture.Read(frame);
+
                     Mat screenshot = frame.Clone();
                     if (ckb_savewithfilter.IsChecked == true && !filterframe_dynamic.Empty())
                     {
@@ -1282,6 +1337,7 @@ namespace VideoCapture
                         var mat_filter = new Mat<Vec4b>(filter_frame);
                         var indexer_filter = mat_filter.GetIndexer();
 
+                        //pixel par pixel
                         for (int y = 0; y < screenshot.Height; y++)
                         {
                             for (int x = 0; x < screenshot.Width; x++)
@@ -1316,6 +1372,7 @@ namespace VideoCapture
                     screenshot.SaveImage(filename);
                     screenshotCount++;
                     screenshotFile_Last = filename;
+                    screenshot_inprogress = false;
                 }
         }
 
@@ -1542,7 +1599,7 @@ namespace VideoCapture
         }
         #endregion
 
-        #region FITLRES
+        #region FILTRES
         public void Config_Filters_Save()
         {
             try
@@ -1578,7 +1635,8 @@ namespace VideoCapture
                 {
                     item.PropertyChanged += filtre_manager.FilterPropertyChanged;
 
-                    if (item.isTxt && ((Filtre_TXT)item).Dynamic)
+                    //if (item.isTxt && ((Filtre_TXT)item).Dynamic)
+                    if (item._type == Filtre.FiltreType.texte && ((Filtre_TXT)item).Dynamic)
                         filtres_aumoins1dynamic = true;
                 }
             }

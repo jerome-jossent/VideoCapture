@@ -30,7 +30,7 @@ namespace VideoCapture
 
         public void _ListFiltersUpdate()
         {
-            OnPropertyChanged("_ListFilters");
+            OnPropertyChanged(nameof(_ListFilters));
         }
 
         public Filtre currentFilter
@@ -46,26 +46,32 @@ namespace VideoCapture
                 _currentFilter = value;
                 if (_currentFilter != null)
                 {
-                    if (_currentFilter.isTxt)
+                    switch (_currentFilter._type)
                     {
-                        Filtre_TXT ft = (Filtre_TXT)_currentFilter;
-                        colorPicker._SetColor(ft.color);
-                        colorPicker_Border._SetColor(ft.color_Border);
+                        case Filtre.FiltreType.texte:
+                            Filtre_TXT ft = (Filtre_TXT)_currentFilter;
+                            colorPicker._SetColor(ft.color);
+                            colorPicker_Border._SetColor(ft.color_Border);
 
-                        gridTXT = Visibility.Visible;
-                        gridIMG = Visibility.Collapsed;
-                    }
+                            gridTXT = Visibility.Visible;
+                            gridIMG = Visibility.Collapsed;
+                            break;
 
-                    if (_currentFilter.isImage)
-                    {
-                        gridTXT = Visibility.Collapsed;
-                        gridIMG = Visibility.Visible;
+                        case Filtre.FiltreType.image:
+                            gridTXT = Visibility.Collapsed;
+                            gridIMG = Visibility.Visible;
+                            break;
+
+                        case Filtre.FiltreType.ruller:
+                            gridTXT = Visibility.Collapsed;
+                            gridIMG = Visibility.Collapsed;
+                            break;
                     }
                 }
-                OnPropertyChanged("gridTXT");
-                OnPropertyChanged("gridIMG");
-                OnPropertyChanged("currentFilter");
-                OnPropertyChanged("oneFiltreIsSelected");
+                OnPropertyChanged(nameof(gridTXT));
+                OnPropertyChanged(nameof(gridIMG));
+                OnPropertyChanged(nameof(currentFilter));
+                OnPropertyChanged(nameof(oneFiltreIsSelected));
             }
         }
         Filtre _currentFilter = null;
@@ -109,7 +115,7 @@ namespace VideoCapture
             set
             {
                 mainWindow.filtres = value;
-                OnPropertyChanged("_ListFilters");
+                OnPropertyChanged(nameof(_ListFilters));
             }
         }
 
@@ -157,6 +163,11 @@ namespace VideoCapture
 
         public void FilterPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            Filtre filtre = (Filtre)sender;
+            if (filtre != null)            
+                if(filtre._type == Filtre.FiltreType.ruller)
+                    return;
+            
             if (e.PropertyName == "title") return;
             mainWindow.Filter_Update();
         }
@@ -197,6 +208,18 @@ namespace VideoCapture
 
             Filtre_TXT f = new Filtre_TXT();
             f.filtre_TXT_Type = ftt;
+
+            _ListFilters.Add(f);
+            currentFilter = f;
+            f.PropertyChanged += FilterPropertyChanged;
+
+            mainWindow.Filter_Update();
+        }
+
+
+        void btn_add_ruller_click(object sender, RoutedEventArgs e)
+        {
+            Filtre_Ruller f = new Filtre_Ruller();
 
             _ListFilters.Add(f);
             currentFilter = f;
@@ -247,10 +270,10 @@ namespace VideoCapture
             mainWindow.Filter_Update();
         }
 
-        void SetFilterPosition_Click(object sender, RoutedEventArgs e)
-        {
-            mainWindow.SetFilterPosition(currentFilter);
-        }
+        //void SetFilterPosition_Click(object sender, RoutedEventArgs e)
+        //{
+        //    mainWindow.SetFilterPosition(currentFilter);
+        //}
 
         void SetFilterPosition__Click(object sender, MouseButtonEventArgs e)
         {

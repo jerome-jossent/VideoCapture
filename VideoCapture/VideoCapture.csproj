@@ -169,6 +169,7 @@
     <Compile Include="Filtre_Manager.xaml.cs">
       <DependentUpon>Filtre_Manager.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Filtre_Ruller.cs" />
     <Compile Include="Filtre_TXT.cs" />
     <Compile Include="InverseBooleanConverter.cs" />
     <Compile Include="NullVisibilityConverter.cs" />

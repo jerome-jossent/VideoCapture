@@ -18,28 +18,46 @@ namespace VideoCapture
         }
 
         [JsonIgnore]
-        public bool isImage
+        public bool isImage// pour Filtre_liste_UC.xaml
         {
-            get { return _isImage; }
-            set
-            {
-                _isImage = value;
-                OnPropertyChanged("isImage");
-            }
+            get { return _type == FiltreType.image; }
         }
-        bool _isImage;
 
         [JsonIgnore]
-        public bool isTxt
+        public bool isTxt// pour Filtre_liste_UC.xaml
         {
-            get { return _isTxt; }
-            set
-            {
-                _isTxt = value;
-                OnPropertyChanged("isTxt");
-            }
+            get { return _type == FiltreType.texte; }
         }
-        bool _isTxt;
+
+        [JsonIgnore]
+        public bool isRuller // pour Filtre_liste_UC.xaml
+        {
+            get { return _type == FiltreType.ruller; }
+        }
+
+        //[JsonIgnore]
+        //public bool isImage
+        //{
+        //    get { return _isImage; }
+        //    set
+        //    {
+        //        _isImage = value;
+        //        OnPropertyChanged("isImage");
+        //    }
+        //}
+        //bool _isImage;
+
+        //[JsonIgnore]
+        //public bool isTxt
+        //{
+        //    get { return _isTxt; }
+        //    set
+        //    {
+        //        _isTxt = value;
+        //        OnPropertyChanged("isTxt");
+        //    }
+        //}
+        //bool _isTxt;
 
         public bool Dynamic;
 
@@ -83,7 +101,7 @@ namespace VideoCapture
             }
         }
 
-        public enum FiltreType { texte, image }
+        public enum FiltreType { texte, image, ruller }
         public FiltreType _type;
 
         public bool enable
